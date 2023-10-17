@@ -63,11 +63,26 @@ public class dataFetch extends javax.swing.JFrame {
         pack();
     }
 
+    public static String convertToCommitsAPIUrl(String repositoryUrl) {
+        String apiBaseUrl = "https://api.github.com/repos/";
+        String[] parts = repositoryUrl.split("/"); //https://github.com/Saeed-Muhaisen/PharmacyProject
+        if (parts.length < 5) {
+            throw new IllegalArgumentException("Invalid repository URL format.");
+        }
+
+        // Extract the repository owner and name
+        String owner = parts[3];
+        String repoName = parts[4];
+
+        // Construct the commits API URL
+        return apiBaseUrl + owner + "/" + repoName + "/commits";
+    }
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {
         String githubLink = jTextField1.getText();  // Get the GitHub link from the text field
+        String commitsApiUrl = convertToCommitsAPIUrl(githubLink); // Convert GitHub link to commits API URL
 
         try {
-            URL url = new URL(githubLink);
+            URL url = new URL(commitsApiUrl); // Use the commits API URL
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
 
@@ -79,8 +94,7 @@ public class dataFetch extends javax.swing.JFrame {
             }
             in.close();
 
-            //System.out.println("Fetched data: " + content.toString());
-            //Parse Json data
+            // Parse Json data
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonNode = objectMapper.readTree(content.toString());
             if (jsonNode.isArray()) {
@@ -98,6 +112,7 @@ public class dataFetch extends javax.swing.JFrame {
             e.printStackTrace();
         }
     }
+
 
     public static void main(String args[]) {
         try {
