@@ -24,21 +24,16 @@ def open_new_page(commit_count, author_names, changed_classes):
     frame = ttk.Frame(canvas)
     canvas.create_window((0, 0), window=frame, anchor=tk.NW)
 
-    for i, (label_text, data) in enumerate(zip(["Authors:", "Total Commits:", "Classes:"], [author_names, commit_count, changed_classes])):
-        label = ttk.Label(frame, text=label_text)
-        label.grid(row=0, column=i, padx=5, pady=5)
+    ttk.Label(frame, text="Author").grid(row=0, column=0, padx=5, pady=5)
+    ttk.Label(frame, text="Total Commits").grid(row=0, column=1, padx=5, pady=5)
+    ttk.Label(frame, text="Changed Classes").grid(row=0, column=2, padx=5, pady=5)
 
-        if i == 0:  # Author names
-            for j, author in enumerate(data):
-                author_label = ttk.Label(frame, text=author)
-                author_label.grid(row=j+1, column=i, padx=5, pady=2)
-        elif i == 1:  # Commit count
-            commit_count_label = ttk.Label(frame, text=data)
-            commit_count_label.grid(row=1, column=i, padx=5, pady=2)
-        elif i == 2:  # Changed classes
-            for j, class_name in enumerate(data):
-                class_label = ttk.Label(frame, text=class_name)
-                class_label.grid(row=j+1, column=i, padx=5, pady=2)
+    for i, (author, commit_count) in enumerate(zip(author_names, commit_count), start=1):
+        ttk.Label(frame, text=author).grid(row=i, column=0, padx=5, pady=2)
+        ttk.Label(frame, text=str(commit_count)).grid(row=i, column=1, padx=5, pady=2)
+
+        changed_classes_text = "\n".join(changed_classes.get(author, []))
+        ttk.Label(frame, text=changed_classes_text).grid(row=i, column=2, padx=5, pady=2, sticky="w")
 
     frame.update_idletasks()
     canvas.configure(scrollregion=canvas.bbox("all"), yscrollcommand=scrollbar.set)
@@ -95,21 +90,24 @@ def submit_button_clicked():
         with open(output_file_path, 'r') as infile:
             loaded_commit_data = json.load(infile)
 
-        # Extract unique author names from the commit data
-        author_names = set(commit['author'] for commit in loaded_commit_data)
+        # Extract unique author names and their commit counts from the commit data
+        author_commit_counts = {}
+        for commit in loaded_commit_data:
+            author = commit['author']
+            author_commit_counts[author] = author_commit_counts.get(author, 0) + 1
 
         # Extract unique class names from the commit data
-        changed_classes = set()
+        changed_classes = {}
         for commit in loaded_commit_data:
+            author = commit['author']
             for modified_file in commit['modified_files']:
                 if modified_file.endswith('.java'):  # Assuming the files are Java classes
-                    changed_classes.add(modified_file)
-                if modified_file.endswith('.py'):  # Assuming the files are Py classes
-                    changed_classes.add(modified_file)
-                if modified_file.endswith('.cpp'):  # Assuming the files are C++ classes
-                    changed_classes.add(modified_file)
-                    
-        commit_count = len(loaded_commit_data)
+                    changed_classes.setdefault(author, []).append(modified_file)
+
+        # Extract authors and total commits for display
+        author_names = list(author_commit_counts.keys())
+        commit_count = [author_commit_counts[author] for author in author_names]
+
         open_new_page(commit_count, author_names, changed_classes)
 
     except Exception as e:
