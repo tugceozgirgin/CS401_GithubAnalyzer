@@ -80,7 +80,7 @@ def submit_button_clicked():
             }
             commit_data.append(commit_info)
 
-        output_file_path = 'commit_data.json'
+        output_file_path = 'O:\proje\CS401_GithubAnalyzer\commit_data.json'
         with open(output_file_path, 'w') as outfile:
             json.dump(commit_data, outfile, indent=4)
 
