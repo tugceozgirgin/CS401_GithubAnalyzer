@@ -15,6 +15,16 @@ conn = psycopg2.connect(
 )
 cursor = conn.cursor()
 
+# Clear existing data by deleting all records in the tables
+cursor.execute('DELETE FROM commit_file;')
+cursor.execute('DELETE FROM commit_developer;')
+cursor.execute('DELETE FROM commits;')
+cursor.execute('DELETE FROM files;')
+cursor.execute('DELETE FROM developer;')
+
+# Commit the deletions
+conn.commit()
+
 # Create the Developer table
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS developer (
@@ -57,60 +67,49 @@ cursor.execute('''
     );
 ''')
 
+# Dictionary to store developer IDs by name
+developer_ids = {}
+
 for commit_data in data:
     # Insert the developer if not already in the database
-    cursor.execute(
-        "INSERT INTO developer (developer_name) VALUES (%s)",
-        (commit_data["author"],),
-    )
+    developer_name = commit_data["author"]
 
-    # Get the developer ID
-    cursor.execute("SELECT developer_id FROM developer WHERE developer_name = %s", (commit_data["author"],))
-    developer_id = cursor.fetchone()[0]
+    if developer_name not in developer_ids:
+        cursor.execute(
+            "INSERT INTO developer (developer_name) VALUES (%s) RETURNING developer_id",
+            (developer_name,)
+        )
+        developer_id = cursor.fetchone()[0]
+        developer_ids[developer_name] = developer_id
+    else:
+        developer_id = developer_ids[developer_name]
 
     # Insert the commit into the commits table
     cursor.execute(
         "INSERT INTO commits (commit_hash, commit_message, author_id) VALUES (%s, %s, %s) RETURNING commit_id",
-        (commit_data["hash"], commit_data["message"], developer_id),
+        (commit_data["hash"], commit_data["message"], developer_id)
     )
     commit_id = cursor.fetchone()[0]
 
     # Insert modified files into the files table and create relations
     for file_name in commit_data["modified_files"]:
         cursor.execute(
-            "INSERT INTO files (file_name) VALUES (%s)",
-            (file_name,),
+            "INSERT INTO files (file_name) VALUES (%s) RETURNING file_id",
+            (file_name,)
         )
-
-        cursor.execute("SELECT file_id FROM files WHERE file_name = %s", (file_name,))
         file_id = cursor.fetchone()[0]
 
         # Create a relation between the commit and developer
         cursor.execute(
             "INSERT INTO commit_developer (commit_id, developer_id) VALUES (%s, %s)",
-            (commit_id, developer_id),
+            (commit_id, developer_id)
         )
 
         # Create a relation between the commit and file
         cursor.execute(
             "INSERT INTO commit_file (commit_id, file_id) VALUES (%s, %s)",
-            (commit_id, file_id),
+            (commit_id, file_id)
         )
-
-# List tables in the public schema
-cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';")
-
-tables = cursor.fetchall()
-for table in tables:
-    print(table[0])
-
-# List developer names from the "developer" table
-cursor.execute("SELECT developer_name FROM developer;")
-developer_names = cursor.fetchall()
-
-# Print developer names
-for developer_name in developer_names:
-    print(developer_name[0])
 
 # Commit changes and close the connection
 conn.commit()
