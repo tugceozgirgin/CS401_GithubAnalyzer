@@ -5,6 +5,9 @@ from tkcalendar import DateEntry
 from pydriller import Repository
 from datetime import datetime, timedelta, timezone
 
+from PY.api.data import extract_commit_data_by_time, dump_json_file, extract_author_commit_counts, \
+    extract_changed_classes
+
 # Define excluded extensions for various file types
 excluded_extensions = {
     'compiled': ['.class', '.pyc'],
@@ -69,42 +72,16 @@ def submit_button_clicked():
         dt2 = None
 
     try:
-        # Write commit data to a temporary JSON file
-        commit_data = []
-        for commit in Repository(github_link, since=dt1, to=dt2).traverse_commits():
-            commit_info = {
-                'hash': commit.hash,
-                'message': commit.msg,
-                'author': commit.author.name,
-                'modified_files': [file.filename for file in commit.modified_files]
-            }
-            commit_data.append(commit_info)
-
+        commit_data = extract_commit_data_by_time(github_link, dt1, dt2)
         output_file_path = 'commit_data.json'
-        with open(output_file_path, 'w') as outfile:
-            json.dump(commit_data, outfile, indent=4)
-
-        print('Commit data written to', output_file_path)
+        dump_json_file(output_file_path, commit_data)
 
         # Load commit data from the temporary JSON file
         with open(output_file_path, 'r') as infile:
             loaded_commit_data = json.load(infile)
 
-        # Extract unique author names and their commit counts from the commit data
-        author_commit_counts = {}
-        for commit in loaded_commit_data:
-            author = commit['author']
-            author_commit_counts[author] = author_commit_counts.get(author, 0) + 1
-
-        # Extract unique class names from the commit data
-        changed_classes = {}
-        for commit in loaded_commit_data:
-            author = commit['author']
-            for modified_file in commit['modified_files']:
-                if modified_file.endswith('.java'):  # Assuming the files are Java classes
-                    changed_classes.setdefault(author, []).append(modified_file)
-
-        # Extract authors and total commits for display
+        author_commit_counts = extract_author_commit_counts(loaded_commit_data)
+        changed_classes = extract_changed_classes(loaded_commit_data)
         author_names = list(author_commit_counts.keys())
         commit_count = [author_commit_counts[author] for author in author_names]
 
