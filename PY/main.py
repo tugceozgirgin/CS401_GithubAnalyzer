@@ -72,17 +72,14 @@ def submit_button_clicked():
         # Write commit data to a temporary JSON file
         commit_data = []
         for commit in Repository(github_link, since=dt1, to=dt2).traverse_commits():
-            commit_date = commit.committer_date
-            formatted_date = commit_date.strftime('%Y-%m-%d %H:%M:%S')
-
             commit_info = {
                 'hash': commit.hash,
                 'message': commit.msg,
                 'author': commit.author.name,
-                'commit_date': formatted_date,
                 'modified_files': [file.filename for file in commit.modified_files]
             }
             commit_data.append(commit_info)
+
         output_file_path = 'commit_data.json'
         with open(output_file_path, 'w') as outfile:
             json.dump(commit_data, outfile, indent=4)
@@ -104,12 +101,7 @@ def submit_button_clicked():
         for commit in loaded_commit_data:
             author = commit['author']
             for modified_file in commit['modified_files']:
-                skip_file = False
-                for ext_type, extensions in excluded_extensions.items():
-                    if any(modified_file.endswith(ext) for ext in extensions):
-                        skip_file = True
-                        break
-                if not skip_file:
+                if modified_file.endswith('.java'):  # Assuming the files are Java classes
                     changed_classes.setdefault(author, []).append(modified_file)
 
         # Extract authors and total commits for display
