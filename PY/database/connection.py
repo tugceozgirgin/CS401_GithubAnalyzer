@@ -2,7 +2,7 @@ import json
 import psycopg2
 
 # Read data from the JSON file
-with open('O:\proje\CS401_GithubAnalyzer\commit_data.json', 'r') as json_file:
+with open('O:\proje\CS401_GithubAnalyzer\PY\commit_data.json', 'r') as json_file:
     data = json.load(json_file)
 
 # Connect to the PostgreSQL database
