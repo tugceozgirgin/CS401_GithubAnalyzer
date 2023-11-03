@@ -116,5 +116,22 @@
             "main.py",
             "neo.py"
         ]
+    },
+    {
+        "hash": "b1319a7415692a080696478eb7d472e7ccb20d73",
+        "message": "db ye file label \u0131 ekleme ve gui ve neo yu ay\u0131r\u0131p yeni bir main olu\u015fturma",
+        "author": "Ece Karata\u015f",
+        "commit_date": "2023-11-01 14:50:00",
+        "modified_files": [
+            "gui.cpython-39.pyc",
+            "commit_data.json",
+            "gui.py",
+            "data.cpython-39.pyc",
+            "commit_data.json",
+            "neo_db.cpython-39.pyc",
+            "connection.py",
+            "neo_db.py",
+            "main.py"
+        ]
     }
 ]
