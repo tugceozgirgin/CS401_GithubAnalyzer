@@ -89,8 +89,8 @@ class GUI:
         neo_instance = NEO(github_link)
         neo_instance.run()
 
-        connection_instance = CONNECTION()
-        connection_instance.run()
+        #connection_instance = CONNECTION()
+        #connection_instance.run()
 
 
         # Check if the GitHub link is provided

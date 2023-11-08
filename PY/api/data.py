@@ -27,27 +27,27 @@ def dump_json_file(output_file_path, commit_data):
         json.dump(commit_data, outfile, indent=4)
     print('Commit data written to', output_file_path)
 
-def get_all_files(commit_data):
-    files = set()
-    for commit in commit_data:
-        for modified_file in commit['modified_files']:
-            # Check if the file has an excluded extension
-            skip_file = False
-            for ext_type, extensions in excluded_extensions.items():
-                if any(modified_file.endswith(ext) for ext in extensions):
-                    skip_file = True
-                    break
-
-            if not skip_file:
-                files.add(modified_file)
-
-    return list(files)
-
-def get_all_developers(commit_data):
-    developers = set()
-    for commit in commit_data:
-        developers.add(commit['author'])
-    return list(developers)
+# def get_all_files(commit_data):
+#     files = set()
+#     for commit in commit_data:
+#         for modified_file in commit['modified_files']:
+#             # Check if the file has an excluded extension
+#             skip_file = False
+#             for ext_type, extensions in excluded_extensions.items():
+#                 if any(modified_file.endswith(ext) for ext in extensions):
+#                     skip_file = True
+#                     break
+#
+#             if not skip_file:
+#                 files.add(modified_file)
+#
+#     return list(files)
+#
+# def get_all_developers(commit_data):
+#     developers = set()
+#     for commit in commit_data:
+#         developers.add(commit['author'])
+#     return list(developers)
 
 
 def extract_commit_data_by_time(github_link,dt1,dt2):
@@ -87,3 +87,75 @@ def extract_changed_classes(loaded_commit_data):
             if not skip_file:
                 changed_classes.setdefault(author, []).append(modified_file)
     return changed_classes
+
+
+def get_files_from_json(json_file_path='commit_data.json'):
+    with open(json_file_path, 'r') as infile:
+        commit_data = json.load(infile)
+
+    files = set()
+    for commit in commit_data:
+        for modified_file in commit['modified_files']:
+            # Check if the file has an excluded extension
+            skip_file = False
+            for ext_type, extensions in excluded_extensions.items():
+                if any(modified_file.endswith(ext) for ext in extensions):
+                    skip_file = True
+                    break
+
+            if not skip_file:
+                files.add(modified_file)
+
+    return list(files)
+
+
+def get_developers_from_json(json_file_path='commit_data.json'):
+    with open(json_file_path, 'r') as infile:
+        commit_data = json.load(infile)
+
+    developers = set()
+    for commit in commit_data:
+        developers.add(commit['author'])
+    return list(developers)
+def get_commits_from_json(json_file_path='commit_data.json'):
+    with open(json_file_path, 'r') as infile:
+        commit_data = json.load(infile)
+
+    developers = dict()
+    for commit in commit_data:
+        developers.add(commit['author'])
+    return list(developers)
+
+
+def get_commits_from_json(json_file_path='commit_data.json'):
+    with open(json_file_path, 'r') as infile:
+        commit_data = json.load(infile)
+
+    commits = []
+    for commit_id, commit in enumerate(commit_data, start=1):
+        modified_files = commit['modified_files']
+
+        # Exclude files that end with extensions in excluded_extensions
+        filtered_files = [file for file in modified_files if not any(file.endswith(ext) for ext in get_all_extensions())]
+
+        commit_info = {
+            'id': commit_id,
+            'hash': commit['hash'],
+            'message': commit['message'],
+            'author': commit['author'],
+            'commit_date': commit['commit_date'],
+            'modified_files': filtered_files
+        }
+        commits.append(commit_info)
+
+    return commits
+
+def get_all_extensions():
+    excluded_extensions = {
+        'compiled': ['.class', '.pyc'],
+        'system': ['.dll', '.exe', '.so']
+    }
+    extensions = []
+    for ext_type, ext_list in excluded_extensions.items():
+        extensions.extend(ext_list)
+    return extensions
