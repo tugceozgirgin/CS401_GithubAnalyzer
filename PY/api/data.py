@@ -27,27 +27,27 @@ def dump_json_file(output_file_path, commit_data):
         json.dump(commit_data, outfile, indent=4)
     print('Commit data written to', output_file_path)
 
-# def get_all_files(commit_data):
-#     files = set()
-#     for commit in commit_data:
-#         for modified_file in commit['modified_files']:
-#             # Check if the file has an excluded extension
-#             skip_file = False
-#             for ext_type, extensions in excluded_extensions.items():
-#                 if any(modified_file.endswith(ext) for ext in extensions):
-#                     skip_file = True
-#                     break
-#
-#             if not skip_file:
-#                 files.add(modified_file)
-#
-#     return list(files)
-#
-# def get_all_developers(commit_data):
-#     developers = set()
-#     for commit in commit_data:
-#         developers.add(commit['author'])
-#     return list(developers)
+def get_all_files(commit_data):
+    files = set()
+    for commit in commit_data:
+        for modified_file in commit['modified_files']:
+            # Check if the file has an excluded extension
+            skip_file = False
+            for ext_type, extensions in excluded_extensions.items():
+                if any(modified_file.endswith(ext) for ext in extensions):
+                    skip_file = True
+                    break
+
+            if not skip_file:
+                files.add(modified_file)
+
+    return list(files)
+
+def get_all_developers(commit_data):
+    developers = set()
+    for commit in commit_data:
+        developers.add(commit['author'])
+    return list(developers)
 
 
 def extract_commit_data_by_time(github_link,dt1,dt2):
