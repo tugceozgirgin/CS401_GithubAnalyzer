@@ -1,0 +1,137 @@
+[
+    {
+        "hash": "46d5d23da64587e4ce43b2eedc16ea64fb1fe23b",
+        "message": "Initial commit",
+        "author": "tugceozgirgin",
+        "commit_date": "2023-10-16 15:53:10",
+        "modified_files": [
+            ".gitattributes"
+        ]
+    },
+    {
+        "hash": "7ec973bbac8faf0aca0b074427c9e41bbd0c7354",
+        "message": "data fetch",
+        "author": "tugceozgirgin",
+        "commit_date": "2023-10-16 16:00:13",
+        "modified_files": [
+            "dataFetch.java"
+        ]
+    },
+    {
+        "hash": "a99b3db94243f26a5d740c9156afe2019387b71d",
+        "message": "URL Converter",
+        "author": "Ece Karata\u015f",
+        "commit_date": "2023-10-17 12:57:41",
+        "modified_files": [
+            "dataFetch.java"
+        ]
+    },
+    {
+        "hash": "d78a4baad42c8cfc21bbcd040c22d50d1b65544e",
+        "message": "driller",
+        "author": "Ece Karata\u015f",
+        "commit_date": "2023-10-18 15:35:34",
+        "modified_files": [
+            "d1.py"
+        ]
+    },
+    {
+        "hash": "c13c0888015e428c509de41106e2826ff8e0e5a1",
+        "message": "data g\u00f6sterimi ve gui eklendi",
+        "author": "Ece Karata\u015f",
+        "commit_date": "2023-10-18 16:50:37",
+        "modified_files": [
+            "d1.py"
+        ]
+    },
+    {
+        "hash": "a91ce6fe8f3b4a78459e64e7a9b00826bc7ba1d2",
+        "message": "date eklendi",
+        "author": "Ece Karata\u015f",
+        "commit_date": "2023-10-18 18:26:43",
+        "modified_files": [
+            "d1.py"
+        ]
+    },
+    {
+        "hash": "741d10d7aa297b3f32666a09d73d86078d6a1677",
+        "message": "daha ki\u015fiselle\u015ftirilmi\u015f ekran",
+        "author": "Ece Karata\u015f",
+        "commit_date": "2023-10-18 19:07:21",
+        "modified_files": [
+            "d1.py"
+        ]
+    },
+    {
+        "hash": "025cd372247595b2a914bc7cdde439ec5291e8f0",
+        "message": "db",
+        "author": "Ece Karata\u015f",
+        "commit_date": "2023-10-26 00:03:46",
+        "modified_files": [
+            "connection.py",
+            "d1.py",
+            "neo.py",
+            "commit_data.json"
+        ]
+    },
+    {
+        "hash": "f9fad4fe67c6542c18695161a18fd91c14ce81cf",
+        "message": "db connection geli\u015ftirme ve analiz class \u0131 ekleme",
+        "author": "Ece Karata\u015f",
+        "commit_date": "2023-10-27 13:37:27",
+        "modified_files": [
+            "analyze.py",
+            "connection.py",
+            "commit_data.json"
+        ]
+    },
+    {
+        "hash": "099e8665a9cd3fb9aae0b8349d0fcfecf69ee457",
+        "message": "neo4j database  data fetch functions",
+        "author": "tugceozgirgin",
+        "commit_date": "2023-10-31 10:41:27",
+        "modified_files": [
+            "data.py",
+            "main.py",
+            "neo_db.py"
+        ]
+    },
+    {
+        "hash": "e1d8fa417c4a1e1a9e8d2f263d008a20216c5469",
+        "message": "Merge remote-tracking branch 'origin/main'\n\n# Conflicts:\n#\tPY/main.py",
+        "author": "tugceozgirgin",
+        "commit_date": "2023-10-31 10:43:10",
+        "modified_files": []
+    },
+    {
+        "hash": "6fbcc83f1219dfe57b15d42dc58a594a082938f1",
+        "message": "project architecture changed & file nodes added",
+        "author": "tugceozgirgin",
+        "commit_date": "2023-10-31 12:46:59",
+        "modified_files": [
+            "data.py",
+            "analyze.py",
+            "connection.py",
+            "neo_db.py",
+            "main.py",
+            "neo.py"
+        ]
+    },
+    {
+        "hash": "b1319a7415692a080696478eb7d472e7ccb20d73",
+        "message": "db ye file label \u0131 ekleme ve gui ve neo yu ay\u0131r\u0131p yeni bir main olu\u015fturma",
+        "author": "Ece Karata\u015f",
+        "commit_date": "2023-11-01 14:50:00",
+        "modified_files": [
+            "gui.cpython-39.pyc",
+            "commit_data.json",
+            "gui.py",
+            "data.cpython-39.pyc",
+            "commit_data.json",
+            "neo_db.cpython-39.pyc",
+            "connection.py",
+            "neo_db.py",
+            "main.py"
+        ]
+    }
+]
