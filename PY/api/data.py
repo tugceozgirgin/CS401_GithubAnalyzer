@@ -2,11 +2,20 @@
 
 import json
 from pydriller import Repository
+
 from datetime import datetime, timedelta, timezone
 excluded_extensions = {
     'compiled': ['.class', '.pyc'],
     'system': ['.dll', '.exe', '.so']
 }
+def get_lines_changed_in_commit(github_link, commit_hash):
+    lines_changed = 0
+    repo = Repository(github_link)
+    for commit in RepositoryMining(repo, single=commit_hash).traverse_commits():
+        for modification in commit.modifications:
+            lines_changed += modification.added + modification.removed
+
+    return lines_changed
 def extract_commit_data(github_link):
     commit_data = []
     for commit in Repository(github_link).traverse_commits():
@@ -159,3 +168,4 @@ def get_all_extensions():
     for ext_type, ext_list in excluded_extensions.items():
         extensions.extend(ext_list)
     return extensions
+

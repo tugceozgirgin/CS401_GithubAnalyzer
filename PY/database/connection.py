@@ -28,6 +28,9 @@ class CONNECTION:
         cursor.execute('DELETE FROM files;')
         cursor.execute('DELETE FROM developer;')
 
+        # Drop the Commits table and its dependent objects
+        cursor.execute('DROP TABLE IF EXISTS commits CASCADE;')
+
         # Commit the deletions
         conn.commit()
 
@@ -44,6 +47,7 @@ class CONNECTION:
             CREATE TABLE IF NOT EXISTS commits (
                 commit_id SERIAL PRIMARY KEY,
                 commit_hash TEXT,
+                commit_message TEXT,
                 commit_date TEXT,
                 author_id INTEGER REFERENCES developer(developer_id)
             );
@@ -92,9 +96,10 @@ class CONNECTION:
 
             # Insert the commit into the commits table
             cursor.execute(
-                "INSERT INTO commits (commit_hash, commit_message, author_id) VALUES (%s, %s, %s) RETURNING commit_id",
-                (commit_data["hash"], commit_data["message"], developer_id)
+                "INSERT INTO commits (commit_hash, commit_message, commit_date, author_id) VALUES (%s, %s, %s, %s) RETURNING commit_id",
+                (commit_data["hash"], commit_data["message"], commit_data["commit_date"], developer_id)
             )
+
             commit_id = cursor.fetchone()[0]
 
             # Insert modified files into the files table and create relations

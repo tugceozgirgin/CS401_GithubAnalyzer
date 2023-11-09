@@ -3,7 +3,7 @@ import json
 import numpy as np
 import pandas as pd
 from PY.api.data import extract_commit_data, get_files_from_json, \
-    get_developers_from_json, get_commits_from_json, get_all_developers, get_all_files
+    get_developers_from_json, get_commits_from_json, get_all_developers, get_all_files, get_lines_changed_in_commit
 from neo4j import GraphDatabase
 
 
@@ -94,6 +94,10 @@ class NEO:
                     commit_id) + "}), (f:Files {file_name: '" + file_name + "'}) "
                                                                             "CREATE (c)-[:MODIFIED_FILE]->(f)"
                 )
+                #lines_changed = get_lines_changed_in_commit(self.github_link, commit_hash)
+                #print(f"Commit {commit_hash} made {lines_changed} line changes.")
+                #TUGÇEEE
+
                 commit_execution_commands.append(neo4j_create_relation_file_statement)
 
         execute_nodes(commit_execution_commands)
