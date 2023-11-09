@@ -44,7 +44,7 @@ class CONNECTION:
             CREATE TABLE IF NOT EXISTS commits (
                 commit_id SERIAL PRIMARY KEY,
                 commit_hash TEXT,
-                commit_message TEXT,
+                commit_date TEXT,
                 author_id INTEGER REFERENCES developer(developer_id)
             );
         ''')
@@ -59,7 +59,7 @@ class CONNECTION:
 
         # Create the CommitDeveloper relation table
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS commit_developer (
+            CREATE TABLE IF NOT EXISTS developed_by (
                 commit_id INTEGER REFERENCES commits(commit_id),
                 developer_id INTEGER REFERENCES developer(developer_id)
             );

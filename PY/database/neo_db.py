@@ -71,11 +71,29 @@ class NEO:
             neo4j_create_statement = (
                     "CREATE (c:Commit {commit_id: " + str(commit_id) + ", "
                     "commit_hash: '" + commit_hash + "', "
-                    "commit_message: '" + commit_message + "', "
+                   # "commit_message: '" + commit_message + "', "
                     "commit_author: '" + commit_author + "', "
                     "commit_date: '" + commit_date + "', "
                     "modified_files: " + json.dumps(modified_files) + "})"
             )
 
             commit_execution_commands.append(neo4j_create_statement)
+
+            # Create relationships between Commit-Developer
+            neo4j_create_relation_dev_statement = (
+                "MATCH (c:Commit), (d:Developer) "
+                "WHERE c.commit_author = d.developer_name "
+                "MERGE (c)-[:DEVELOPED_BY]->(d)"
+            )
+            commit_execution_commands.append(neo4j_create_relation_dev_statement)
+
+            # Create relationships between Commit-File
+            for file_name in modified_files:
+                neo4j_create_relation_file_statement = (
+                        "MATCH (c:Commit {commit_id: " + str(
+                    commit_id) + "}), (f:Files {file_name: '" + file_name + "'}) "
+                                                                            "CREATE (c)-[:MODIFIED_FILE]->(f)"
+                )
+                commit_execution_commands.append(neo4j_create_relation_file_statement)
+
         execute_nodes(commit_execution_commands)
