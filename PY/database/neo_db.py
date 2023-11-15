@@ -1,4 +1,5 @@
 import json
+from typing import Dict, List
 
 import pandas as pd
 from PY.api.data import extract_commit_data, get_files_from_json, \
@@ -145,3 +146,96 @@ class NEO:
         coverage_ratios = calculate_file_change_coverage_ratio(file_counts, all_files)
 
         self.classify_developers_and_update_neo4j(coverage_ratios, file_counts)
+
+    def calculate_developers_per_file(self, loaded_commit_data):
+        developers_per_file = {}
+        for commit in loaded_commit_data:
+            author = commit['author']
+            modified_files = commit['modified_files']
+            for file in modified_files:
+                developers_per_file[file] = developers_per_file.get(file, set()).union({author})
+
+        return developers_per_file
+
+    def find_files_modified_by_fewest_developers(self, developers_per_file):
+        min_developers = float('inf')
+        files_modified_by_fewest = set()
+
+        for file, developers in developers_per_file.items():
+            num_developers = len(developers)
+            if num_developers < min_developers:
+                min_developers = num_developers
+                files_modified_by_fewest = {file}
+            elif num_developers == min_developers:
+                files_modified_by_fewest.add(file)
+
+        return files_modified_by_fewest
+
+    def calculate_mavenness(self, file_counts, developers_per_file, threshold=2) -> Dict[str, float]:
+        rarely_reached_files = set()
+
+        # Step 1: Identify rarely reached files based on the threshold
+        for file, developers in developers_per_file.items():
+            if developers <= threshold:
+                rarely_reached_files.add(file)
+
+        mavenness_per_developer = {}
+
+        # Step 2: Calculate mavenness for each developer
+        for developer, files in file_counts.items():
+            developers = developers_per_file.get(developer, 0)  # Ensure developers is an integer
+            rarely_reached_files_for_developer = rarely_reached_files.intersection(files)
+            mavenness = len(rarely_reached_files_for_developer) / len(
+                rarely_reached_files) if rarely_reached_files else 0
+            mavenness_per_developer[developer] = mavenness
+
+        return mavenness_per_developer
+
+    def calculate_developers_per_file_count(self, commit_data) -> Dict[str, int]:
+        developers_per_file_count = {}
+        for commit in commit_data:
+            author = commit['author']
+            modified_files = commit['modified_files']
+
+            for modified_file in modified_files:
+                developers_per_file_count[modified_file] = developers_per_file_count.get(modified_file, 0) + 1
+
+        return developers_per_file_count
+
+    # Inside your analyze_developers method
+    def analyze_developers(self):
+        commit_data = get_commits_from_json()
+        all_files = get_all_files(commit_data)
+
+        file_counts = calculate_file_change_coverage(commit_data)
+        coverage_ratios = calculate_file_change_coverage_ratio(file_counts, all_files)
+
+        developers_per_file_count = self.calculate_developers_per_file_count(commit_data)
+        mavenness_per_developer = self.calculate_mavenness(file_counts, developers_per_file_count)
+
+        self.classify_developers_and_update_neo4j(coverage_ratios, file_counts)
+        commit_data = get_commits_from_json()
+        all_files = get_all_files(commit_data)
+
+        file_counts = calculate_file_change_coverage(commit_data)
+        coverage_ratios = calculate_file_change_coverage_ratio(file_counts, all_files)
+
+        developers_per_file = self.calculate_developers_per_file(commit_data)
+        files_modified_by_fewest = self.find_files_modified_by_fewest_developers(developers_per_file)
+
+        self.classify_developers_and_update_neo4j(coverage_ratios, file_counts)
+
+
+        # Print or store information about Mavenness for each developer
+        with open('mavenness_classification.txt', 'w') as mavenness_output_file:
+            total_rarely_reached_files = sum(1 for mavenness in mavenness_per_developer.values() if mavenness > 0)
+            mavenness_output_file.write(f"Total Rarely Reached Files: {total_rarely_reached_files}\n\n")
+
+            mavenness_output_file.write("Mavenness for each Developer:\n")
+            for developer, mavenness in mavenness_per_developer.items():
+                mavenness_output_file.write(f"{developer}: {mavenness:.2%}\n")
+
+            mavenness_output_file.write("\nFiles modified by the fewest developers:\n")
+            for modified_file in files_modified_by_fewest:
+                mavenness_output_file.write(f"{modified_file}: {len(developers_per_file[modified_file])} developers\n")
+

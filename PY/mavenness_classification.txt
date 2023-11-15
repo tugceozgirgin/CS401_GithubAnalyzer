@@ -1,0 +1,37 @@
+Total Rarely Reached Files: 4
+
+Mavenness for each Developer:
+Saeed-Muhaisen: 24.00%
+tugceozgirgin: 4.00%
+Ed: 84.00%
+Ece Karataþ: 0.00%
+jana ayoub: 0.00%
+elifozmen: 4.00%
+
+Files modified by the fewest developers:
+DoctorAPITest.java: 1 developers
+UserAccountDao.java: 1 developers
+pom.xml: 1 developers
+compiler.xml: 1 developers
+uiDesigner.xml: 1 developers
+UserAccountDaoTest.java: 1 developers
+sqldialects.xml: 1 developers
+application.properties: 1 developers
+InventoryDao.java: 1 developers
+PrescriptionAPITest.java: 1 developers
+jarRepositories.xml: 1 developers
+PatientAPITest.java: 1 developers
+Inventory.java: 1 developers
+DrugListAPITest.java: 1 developers
+PharmacyAPITest.java: 1 developers
+DrugAPITest.java: 1 developers
+TransactionHistoryAPITest.java: 1 developers
+HELP.md: 1 developers
+vcs.xml: 1 developers
+UserAccountAPI.java: 1 developers
+mvnw: 1 developers
+UserAccountAPITest.java: 1 developers
+mvnw.cmd: 1 developers
+.gitignore: 1 developers
+UserAccount.java: 1 developers
+InventoryAPITest.java: 1 developers

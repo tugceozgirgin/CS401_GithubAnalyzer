@@ -5,9 +5,10 @@ from pydriller import Repository
 
 from datetime import datetime, timedelta, timezone
 excluded_extensions = {
-    'compiled': ['.class', '.pyc'],
+    'compiled': ['.class', '.pyc', '.jar', '.iml', '.name', '.gitignore'],
     'system': ['.dll', '.exe', '.so']
 }
+
 def get_lines_changed_in_commit(github_link, commit_hash):
     lines_changed = 0
     repo = Repository(github_link)
