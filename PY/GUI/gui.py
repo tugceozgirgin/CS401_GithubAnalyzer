@@ -7,8 +7,8 @@ from datetime import datetime, timedelta, timezone
 from PY.database.connection import CONNECTION
 from PY.database.neo_db import NEO  # Import the NEO class
 
-from PY.api.data import extract_commit_data_by_time, dump_json_file, extract_author_commit_counts, extract_changed_classes
-
+from PY.api.data import extract_commit_data_by_time, dump_json_file, extract_author_commit_counts, \
+    extract_changed_classes
 # Define excluded extensions for various file types
 excluded_extensions = {
     'compiled': ['.class', '.pyc'],
@@ -85,13 +85,6 @@ class GUI:
 
     def submit_button_clicked(self):
         github_link = self.entry.get()
-        #Run the NEO class with the provided GitHub link
-        neo_instance = NEO(github_link)
-        neo_instance.run()
-
-        connection_instance = CONNECTION()
-        connection_instance.run()
-
 
         # Check if the GitHub link is provided
         if not github_link:
@@ -129,6 +122,12 @@ class GUI:
 
         except Exception as e:
             messagebox.showinfo("Error", f"An error occurred: {str(e)}")
+
+        # Run the NEO class with the provided GitHub link
+        neo_instance = NEO(github_link)
+        neo_instance.run()
+        #connection_instance = CONNECTION()
+        #connection_instance.run()
 
     def get_github_link(self):
         github_link = self.entry.get()

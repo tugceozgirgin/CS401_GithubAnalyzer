@@ -1,6 +1,5 @@
 import json
 
-import numpy as np
 import pandas as pd
 from PY.api.data import extract_commit_data, get_files_from_json, \
     get_developers_from_json, get_commits_from_json, get_all_developers, get_all_files, get_lines_changed_in_commit
@@ -28,7 +27,7 @@ class NEO:
         data = extract_commit_data(self.github_link)
 
         # Create Developer Nodes' Cypher code and connect with Neo4j
-        developers = get_all_developers(data)
+        developers = get_developers_from_json()
         developer_id = [i for i in range(1, len(developers) + 1)]
         developer_data = {
             "id": developer_id,
@@ -43,7 +42,7 @@ class NEO:
         execute_nodes(developer_execution_commands)
 
         # Create File Nodes' Cypher code and connect with Neo4j
-        files = get_all_files(data)
+        files = get_files_from_json()
         file_id = [i for i in range(1, len(files) + 1)]
         file_data = {
             "id": file_id,
