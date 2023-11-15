@@ -2,7 +2,8 @@ import json
 
 import pandas as pd
 from PY.api.data import extract_commit_data, get_files_from_json, \
-    get_developers_from_json, get_commits_from_json, get_all_developers, get_all_files, get_lines_changed_in_commit
+    get_developers_from_json, get_commits_from_json, get_all_developers, get_all_files, get_lines_changed_in_commit, \
+    calculate_file_change_coverage, calculate_file_change_coverage_ratio
 from neo4j import GraphDatabase
 
 
@@ -100,3 +101,47 @@ class NEO:
                 commit_execution_commands.append(neo4j_create_relation_file_statement)
 
         execute_nodes(commit_execution_commands)
+
+    def classify_developers_and_update_neo4j(self, coverage_ratios, file_counts, threshold=0.19):
+        classified_developers = {}
+        total_files_changed = {}
+
+        for author, ratio in coverage_ratios.items():
+            classification = 'Jack' if ratio > threshold else 'Not Jack'
+            classified_developers[author] = classification
+            total_files_changed[author] = len(file_counts[author])
+
+        # Update Neo4j with developer classification
+        neo4j_update_commands = []
+        for author, classification in classified_developers.items():
+            neo4j_update_commands.append(
+                f"MATCH (d:Developer {{developer_name: '{author}'}}) "
+                f"SET d.classification = '{classification}'"
+            )
+
+        execute_nodes(neo4j_update_commands)
+
+        # Write classification and file information to a file
+        with open('developer_classifications.txt', 'w') as file:
+            file.write("Developer Classifications:\n")
+            for author, classification in classified_developers.items():
+                file.write(f"{author}: {classification}\n")
+
+            total_files = sum(total_files_changed.values())
+            file.write("\nDeveloper File Information:\n")
+            file.write(f"Threshold: {threshold}\n")
+            file.write(f"Total files: {total_files}\n\n")
+
+            for author, files_changed in total_files_changed.items():
+                ratio = (files_changed / total_files) * 100
+                file.write(f"{author}: Files Changed - {files_changed}, Ratio - {ratio:.2f}%\n")
+
+
+    def analyze_developers(self):
+        commit_data = get_commits_from_json()
+        all_files = get_all_files(commit_data)
+
+        file_counts = calculate_file_change_coverage(commit_data)
+        coverage_ratios = calculate_file_change_coverage_ratio(file_counts, all_files)
+
+        self.classify_developers_and_update_neo4j(coverage_ratios, file_counts)

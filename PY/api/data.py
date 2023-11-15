@@ -11,9 +11,9 @@ excluded_extensions = {
 def get_lines_changed_in_commit(github_link, commit_hash):
     lines_changed = 0
     repo = Repository(github_link)
-    for commit in RepositoryMining(repo, single=commit_hash).traverse_commits():
-        for modification in commit.modifications:
-            lines_changed += modification.added + modification.removed
+    #for commit in RepositoryMining(repo, single=commit_hash).traverse_commits():
+    #    for modification in commit.modifications:
+    #        lines_changed += modification.added + modification.removed
 
     return lines_changed
 def extract_commit_data(github_link):
@@ -169,3 +169,19 @@ def get_all_extensions():
         extensions.extend(ext_list)
     return extensions
 
+def calculate_file_change_coverage(loaded_commit_data):
+    file_counts = {}
+    for commit in loaded_commit_data:
+        author = commit['author']
+        modified_files = commit['modified_files']
+        file_counts[author] = file_counts.get(author, set()).union(set(modified_files))
+
+    return file_counts
+
+def calculate_file_change_coverage_ratio(file_counts, all_files):
+    coverage_ratios = {}
+    for author, changed_files in file_counts.items():
+        coverage_ratio = len(changed_files) / len(all_files)
+        coverage_ratios[author] = coverage_ratio
+
+    return coverage_ratios

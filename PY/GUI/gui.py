@@ -126,6 +126,7 @@ class GUI:
         # Run the NEO class with the provided GitHub link
         neo_instance = NEO(github_link)
         neo_instance.run()
+        neo_instance.analyze_developers()
         #connection_instance = CONNECTION()
         #connection_instance.run()
 

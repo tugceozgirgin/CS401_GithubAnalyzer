@@ -1,0 +1,18 @@
+Developer Classifications:
+Saeed-Muhaisen: Jack
+tugceozgirgin: Jack
+Ed: Jack
+Ece Karataþ: Not Jack
+jana ayoub: Not Jack
+elifozmen: Not Jack
+
+Developer File Information:
+Threshold: 0.19
+Total files: 124
+
+Saeed-Muhaisen: Files Changed - 29, Ratio - 23.39%
+tugceozgirgin: Files Changed - 25, Ratio - 20.16%
+Ed: Files Changed - 54, Ratio - 43.55%
+Ece Karataþ: Files Changed - 4, Ratio - 3.23%
+jana ayoub: Files Changed - 4, Ratio - 3.23%
+elifozmen: Files Changed - 8, Ratio - 6.45%
