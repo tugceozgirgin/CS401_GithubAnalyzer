@@ -2,8 +2,8 @@ import json
 from typing import Dict, List
 
 import pandas as pd
-from PY.api.data import extract_commit_data, get_files_from_json, \
-    get_developers_from_json, get_commits_from_json, get_all_developers, get_all_files, get_lines_changed_in_commit, \
+from PY.api.data import get_files_from_json, \
+    get_developers_from_json, get_commits_from_json, get_all_files, \
     calculate_file_change_coverage, calculate_file_change_coverage_ratio
 from neo4j import GraphDatabase
 
@@ -25,8 +25,6 @@ class NEO:
         session = data_base_connection.session()
         delete_all_command = "MATCH (n) DETACH DELETE n"
         session.run(delete_all_command)
-
-        data = extract_commit_data(self.github_link)
 
         # Create Developer Nodes' Cypher code and connect with Neo4j
         developers = get_developers_from_json()
@@ -57,52 +55,58 @@ class NEO:
             file_execution_commands.append(neo4j_create_statement)
         execute_nodes(file_execution_commands)
 
-       #Create Commit Nodes' Cypher code and connect with Neo4j
+        # Create Commit Nodes' Cypher code and connect with Neo4j
         commit_data = get_commits_from_json()
-        commit_list = pd.DataFrame(commit_data).values.tolist()
         commit_execution_commands = []
-        for i in commit_list:
-            commit_id = i[0]
-            commit_hash = i[1]
-            commit_message = i[2]
-            commit_author = i[3]  # Add the 'commit_author' attribute
-            commit_date = i[4]  # Add the 'commit_date' attribute
-            modified_files = i[5]  # Add the 'modified_files' attribute
+
+        for i, commit in enumerate(commit_data, start=1):
+            commit_id = i
+            commit_hash = commit['hash']
+            commit_author = commit['author']
+            commit_date = commit['commit_date']
+            modified_files = commit['modified_files']
+            lines_inserted = commit['lines_inserted']
+            lines_deleted = commit['lines_deleted']
 
             neo4j_create_statement = (
-                    "CREATE (c:Commit {commit_id: " + str(commit_id) + ", "
-                    "commit_hash: '" + commit_hash + "', "
-                   # "commit_message: '" + commit_message + "', "
-                    "commit_author: '" + commit_author + "', "
-                    "commit_date: '" + commit_date + "', "
-                    "modified_files: " + json.dumps(modified_files) + "})"
+                f"CREATE (c:Commit {{commit_id: {commit_id}, commit_hash: '{commit_hash}', "
+                f"commit_author: '{commit_author}', "
+                f"commit_date: '{commit_date}', modified_files: {json.dumps(modified_files)}, "
+                f"lines_inserted: {json.dumps(lines_inserted)}, lines_deleted: {json.dumps(lines_deleted)}}})"
             )
 
             commit_execution_commands.append(neo4j_create_statement)
 
-            # Create relationships between Commit-Developer
-            neo4j_create_relation_dev_statement = (
-                "MATCH (c:Commit), (d:Developer) "
-                "WHERE c.commit_author = d.developer_name "
-                "MERGE (c)-[:DEVELOPED_BY]->(d)"
-            )
-            commit_execution_commands.append(neo4j_create_relation_dev_statement)
-
-            # Create relationships between Commit-File
-            for file_name in modified_files:
-                neo4j_create_relation_file_statement = (
-                        "MATCH (c:Commit {commit_id: " + str(
-                    commit_id) + "}), (f:Files {file_name: '" + file_name + "'}) "
-                                                                            "CREATE (c)-[:MODIFIED_FILE]->(f)"
-                )
-                #lines_changed = get_lines_changed_in_commit(self.github_link, commit_hash)
-                #print(f"Commit {commit_hash} made {lines_changed} line changes.")
-                #TUGÇEEE
-
-                commit_execution_commands.append(neo4j_create_relation_file_statement)
-
+    # Create relationships between Commit-Developer
+        neo4j_create_relation_dev_statement = (
+            "MATCH (c:Commit), (d:Developer) "
+            "WHERE c.commit_author = d.developer_name "
+            "MERGE (d)-[:DEVELOPED_BY]->(c)"
+         )
+        commit_execution_commands.append(neo4j_create_relation_dev_statement)
         execute_nodes(commit_execution_commands)
 
+        # Create relationships between Commit-File based on modified_files
+        commit_file_relation_commands = []
+
+        for commit in commit_data:
+            commit_hash = commit['hash']
+            modified_files = commit['modified_files']
+            lines_inserted = commit['lines_inserted']
+            lines_deleted = commit['lines_deleted']
+
+            for idx, file_name in enumerate(modified_files):
+                inserted = lines_inserted[idx]
+                deleted = lines_deleted[idx]
+
+                neo4j_create_relation_file_statement = (
+                    f"MATCH (c:Commit {{commit_hash: '{commit_hash}'}}), "
+                    f"(f:Files {{file_name: '{file_name}'}}) "
+                    f"CREATE (c)-[:MODIFIED {{inserted_lines: {inserted}, deleted_lines: {deleted}}}]->(f)"
+                )
+                commit_file_relation_commands.append(neo4j_create_relation_file_statement)
+
+        execute_nodes(commit_file_relation_commands)
     def classify_developers_and_update_neo4j(self, coverage_ratios, file_counts, threshold=0.19):
         classified_developers = {}
         total_files_changed = {}
@@ -238,4 +242,3 @@ class NEO:
             mavenness_output_file.write("\nFiles modified by the fewest developers:\n")
             for modified_file in files_modified_by_fewest:
                 mavenness_output_file.write(f"{modified_file}: {len(developers_per_file[modified_file])} developers\n")
-

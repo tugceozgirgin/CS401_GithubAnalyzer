@@ -8,7 +8,8 @@ from PY.database.connection import CONNECTION
 from PY.database.neo_db import NEO  # Import the NEO class
 
 from PY.api.data import extract_commit_data_by_time, dump_json_file, extract_author_commit_counts, \
-    extract_changed_classes
+    extract_changed_classes, extract_commit_data
+
 # Define excluded extensions for various file types
 excluded_extensions = {
     'compiled': ['.class', '.pyc'],
@@ -105,7 +106,7 @@ class GUI:
             dt2 = None
 
         try:
-            commit_data = extract_commit_data_by_time(github_link, dt1, dt2)
+            commit_data = extract_commit_data(github_link, dt1, dt2)
             output_file_path = 'commit_data.json'
             dump_json_file(output_file_path, commit_data)
 
@@ -126,7 +127,8 @@ class GUI:
         # Run the NEO class with the provided GitHub link
         neo_instance = NEO(github_link)
         neo_instance.run()
-        neo_instance.analyze_developers()
+
+        #neo_instance.analyze_developers()
         #connection_instance = CONNECTION()
         #connection_instance.run()
 

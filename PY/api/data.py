@@ -3,39 +3,20 @@
 import json
 from pydriller import Repository
 
+
 from datetime import datetime, timedelta, timezone
+
 excluded_extensions = {
     'compiled': ['.class', '.pyc', '.jar', '.iml', '.name', '.gitignore'],
     'system': ['.dll', '.exe', '.so']
 }
 
-def get_lines_changed_in_commit(github_link, commit_hash):
-    lines_changed = 0
-    repo = Repository(github_link)
-    #for commit in RepositoryMining(repo, single=commit_hash).traverse_commits():
-    #    for modification in commit.modifications:
-    #        lines_changed += modification.added + modification.removed
-
-    return lines_changed
-def extract_commit_data(github_link):
-    commit_data = []
-    for commit in Repository(github_link).traverse_commits():
-        commit_date = commit.committer_date
-        formatted_date = commit_date.strftime('%Y-%m-%d %H:%M:%S')
-        commit_info = {
-            'hash': commit.hash,
-            'message': commit.msg,
-            'author': commit.author.name,
-            'commit_date': formatted_date,
-            'modified_files': [file.filename for file in commit.modified_files]
-        }
-        commit_data.append(commit_info)
-    return commit_data
 
 def dump_json_file(output_file_path, commit_data):
     with open(output_file_path, 'w') as outfile:
         json.dump(commit_data, outfile, indent=4)
     print('Commit data written to', output_file_path)
+
 
 def get_all_files(commit_data):
     files = set()
@@ -53,6 +34,7 @@ def get_all_files(commit_data):
 
     return list(files)
 
+
 def get_all_developers(commit_data):
     developers = set()
     for commit in commit_data:
@@ -60,7 +42,7 @@ def get_all_developers(commit_data):
     return list(developers)
 
 
-def extract_commit_data_by_time(github_link,dt1,dt2):
+def extract_commit_data_by_time(github_link, dt1, dt2):
     commit_data = []
     for commit in Repository(github_link, since=dt1, to=dt2).traverse_commits():
         commit_date = commit.committer_date
@@ -75,12 +57,14 @@ def extract_commit_data_by_time(github_link,dt1,dt2):
         commit_data.append(commit_info)
     return commit_data
 
+
 def extract_author_commit_counts(loaded_commit_data):
     author_commit_counts = {}
     for commit in loaded_commit_data:
         author = commit['author']
         author_commit_counts[author] = author_commit_counts.get(author, 0) + 1
     return author_commit_counts
+
 
 def extract_changed_classes(loaded_commit_data):
     changed_classes = {}
@@ -127,48 +111,52 @@ def get_developers_from_json(json_file_path='commit_data.json'):
     for commit in commit_data:
         developers.add(commit['author'])
     return list(developers)
-def get_commits_from_json(json_file_path='commit_data.json'):
-    with open(json_file_path, 'r') as infile:
-        commit_data = json.load(infile)
 
-    developers = dict()
-    for commit in commit_data:
-        developers.add(commit['author'])
-    return list(developers)
+
+import json
 
 
 def get_commits_from_json(json_file_path='commit_data.json'):
     with open(json_file_path, 'r') as infile:
         commit_data = json.load(infile)
+    return commit_data
 
-    commits = []
-    for commit_id, commit in enumerate(commit_data, start=1):
-        modified_files = commit['modified_files']
 
-        # Exclude files that end with extensions in excluded_extensions
-        filtered_files = [file for file in modified_files if not any(file.endswith(ext) for ext in get_all_extensions())]
-
-        commit_info = {
-            'id': commit_id,
-            'hash': commit['hash'],
-            'message': commit['message'],
-            'author': commit['author'],
-            'commit_date': commit['commit_date'],
-            'modified_files': filtered_files
-        }
-        commits.append(commit_info)
-
-    return commits
+# def get_commits_from_json(json_file_path='commit_data.json'):
+#     with open(json_file_path, 'r') as infile:
+#         commit_data = json.load(infile)
+#
+#     commits = []
+#     for commit_id, commit in enumerate(commit_data, start=1):
+#         modified_files = commit['modified_files']
+#
+#         # Exclude files that end with extensions in excluded_extensions
+#         filtered_files = [file for file in modified_files if
+#                           not any(file.endswith(ext) for ext in get_all_extensions())]
+#
+#         commit_info = {
+#             'id': commit_id,
+#             'hash': commit['hash'],
+#             'message': commit['message'],
+#             'author': commit['author'],
+#             'commit_date': commit['commit_date'],
+#             'modified_files': filtered_files
+#         }
+#         commits.append(commit_info)
+#
+#     return commits
+#
+# def get_commits_from_json2(json_file_path='commit_data.json'):
+#     with open(json_file_path, 'r') as infile:
+#         commit_data = json.load(infile)
+#     return commit_data
 
 def get_all_extensions():
-    excluded_extensions = {
-        'compiled': ['.class', '.pyc'],
-        'system': ['.dll', '.exe', '.so']
-    }
     extensions = []
     for ext_type, ext_list in excluded_extensions.items():
         extensions.extend(ext_list)
     return extensions
+
 
 def calculate_file_change_coverage(loaded_commit_data):
     file_counts = {}
@@ -179,6 +167,7 @@ def calculate_file_change_coverage(loaded_commit_data):
 
     return file_counts
 
+
 def calculate_file_change_coverage_ratio(file_counts, all_files):
     coverage_ratios = {}
     for author, changed_files in file_counts.items():
@@ -186,3 +175,63 @@ def calculate_file_change_coverage_ratio(file_counts, all_files):
         coverage_ratios[author] = coverage_ratio
 
     return coverage_ratios
+
+
+def extract_commit_data2(github_link, dt1, dt2):
+    commit_data = []
+    for commit in Repository(github_link, since=dt1, to=dt2).traverse_commits():
+        commit_date = commit.committer_date
+        formatted_date = commit_date.strftime('%Y-%m-%d %H:%M:%S')
+        commit_info = {
+            'hash': commit.hash,
+            'message': commit.msg,
+            'author': commit.author.name,
+            'commit_date': formatted_date,
+            'modified_files': {}
+        }
+        files_info = {}
+        for modified_file in commit.modified_files:
+            lines_inserted = 0
+            lines_deleted = 0
+            for diff in modified_file.diff_parsed['added']:
+                lines_inserted += 1
+            for diff in modified_file.diff_parsed['deleted']:
+                lines_deleted += 1
+
+            files_info[modified_file.filename] = {
+                'lines_inserted': lines_inserted,
+                'lines_deleted': lines_deleted
+            }
+
+        commit_info['modified_files'] = files_info
+        commit_data.append(commit_info)
+    return commit_data
+
+
+def extract_commit_data(github_link, dt1, dt2):
+    commit_data = []
+    for commit in Repository(github_link, since=dt1, to=dt2).traverse_commits():
+        commit_date = commit.committer_date
+        formatted_date = commit_date.strftime('%Y-%m-%d %H:%M:%S')
+        commit_info = {
+            'hash': commit.hash,
+            'message': commit.msg,
+            'author': commit.author.name,
+            'commit_date': formatted_date,
+            'modified_files': [file.filename for file in commit.modified_files],
+            'lines_inserted': [],
+            'lines_deleted': []
+        }
+        for modified_file in commit.modified_files:
+            lines_inserted = 0
+            lines_deleted = 0
+            for diff in modified_file.diff_parsed['added']:
+                lines_inserted += 1
+            for diff in modified_file.diff_parsed['deleted']:
+                lines_deleted += 1
+
+            commit_info['lines_inserted'].append(lines_inserted)
+            commit_info['lines_deleted'].append(lines_deleted)
+
+        commit_data.append(commit_info)
+    return commit_data
