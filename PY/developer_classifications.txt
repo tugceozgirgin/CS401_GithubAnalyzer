@@ -3,16 +3,16 @@ Saeed-Muhaisen: Jack
 tugceozgirgin: Jack
 Ed: Jack
 Ece Karataþ: Not Jack
-jana ayoub: Not Jack
-elifozmen: Not Jack
+jana ayoub: Jack
+elifozmen: Jack
 
 Developer File Information:
 Threshold: 0.19
-Total files: 124
+Total files: 635
 
-Saeed-Muhaisen: Files Changed - 29, Ratio - 23.39%
-tugceozgirgin: Files Changed - 25, Ratio - 20.16%
-Ed: Files Changed - 54, Ratio - 43.55%
-Ece Karataþ: Files Changed - 4, Ratio - 3.23%
-jana ayoub: Files Changed - 4, Ratio - 3.23%
-elifozmen: Files Changed - 8, Ratio - 6.45%
+Saeed-Muhaisen: Files Changed - 50, Ratio - 7.87%
+tugceozgirgin: Files Changed - 68, Ratio - 10.71%
+Ed: Files Changed - 235, Ratio - 37.01%
+Ece Karataþ: Files Changed - 4, Ratio - 0.63%
+jana ayoub: Files Changed - 104, Ratio - 16.38%
+elifozmen: Files Changed - 174, Ratio - 27.40%

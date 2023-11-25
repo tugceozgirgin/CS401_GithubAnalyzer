@@ -4,6 +4,7 @@ from tkinter import messagebox, ttk
 from tkcalendar import DateEntry
 from datetime import datetime, timedelta, timezone
 
+from PY.analyzes.DeveloperAnalyzer import DeveloperAnalyzer
 from PY.database.connection import CONNECTION
 from PY.database.neo_db import NEO  # Import the NEO class
 
@@ -127,8 +128,14 @@ class GUI:
         # Run the NEO class with the provided GitHub link
         neo_instance = NEO(github_link)
         neo_instance.run()
+        neo_instance.analyze_developers2()
 
-        #neo_instance.analyze_developers()
+        developer_analyzer = DeveloperAnalyzer(loaded_commit_data, github_link)
+        developer_analyzer.show_similarity_ratios()
+
+
+
+
         #connection_instance = CONNECTION()
         #connection_instance.run()
 

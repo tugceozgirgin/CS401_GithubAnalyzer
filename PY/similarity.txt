@@ -1,0 +1,15 @@
+Similarity Ratio between Ece Karataþ and jana ayoub: 2.86%
+Similarity Ratio between Ece Karataþ and Saeed-Muhaisen: 8.00%
+Similarity Ratio between Ece Karataþ and tugceozgirgin: 2.86%
+Similarity Ratio between Ece Karataþ and elifozmen: 1.14%
+Similarity Ratio between Ece Karataþ and Ed: 1.70%
+Similarity Ratio between jana ayoub and Saeed-Muhaisen: 4.05%
+Similarity Ratio between jana ayoub and tugceozgirgin: 28.36%
+Similarity Ratio between jana ayoub and elifozmen: 57.95%
+Similarity Ratio between jana ayoub and Ed: 34.52%
+Similarity Ratio between Saeed-Muhaisen and tugceozgirgin: 19.19%
+Similarity Ratio between Saeed-Muhaisen and elifozmen: 5.66%
+Similarity Ratio between Saeed-Muhaisen and Ed: 18.75%
+Similarity Ratio between tugceozgirgin and elifozmen: 24.74%
+Similarity Ratio between tugceozgirgin and Ed: 28.94%
+Similarity Ratio between elifozmen and Ed: 62.30%

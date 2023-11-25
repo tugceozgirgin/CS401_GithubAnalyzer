@@ -107,42 +107,8 @@ class NEO:
                 commit_file_relation_commands.append(neo4j_create_relation_file_statement)
 
         execute_nodes(commit_file_relation_commands)
-    def classify_developers_and_update_neo4j(self, coverage_ratios, file_counts, threshold=0.19):
-        classified_developers = {}
-        total_files_changed = {}
 
-        for author, ratio in coverage_ratios.items():
-            classification = 'Jack' if ratio > threshold else 'Not Jack'
-            classified_developers[author] = classification
-            total_files_changed[author] = len(file_counts[author])
-
-        # Update Neo4j with developer classification
-        neo4j_update_commands = []
-        for author, classification in classified_developers.items():
-            neo4j_update_commands.append(
-                f"MATCH (d:Developer {{developer_name: '{author}'}}) "
-                f"SET d.classification = '{classification}'"
-            )
-
-        execute_nodes(neo4j_update_commands)
-
-        # Write classification and file information to a file
-        with open('developer_classifications.txt', 'w') as file:
-            file.write("Developer Classifications:\n")
-            for author, classification in classified_developers.items():
-                file.write(f"{author}: {classification}\n")
-
-            total_files = sum(total_files_changed.values())
-            file.write("\nDeveloper File Information:\n")
-            file.write(f"Threshold: {threshold}\n")
-            file.write(f"Total files: {total_files}\n\n")
-
-            for author, files_changed in total_files_changed.items():
-                ratio = (files_changed / total_files) * 100
-                file.write(f"{author}: Files Changed - {files_changed}, Ratio - {ratio:.2f}%\n")
-
-
-    def analyze_developers(self):
+    def analyze_developers1(self):
         commit_data = get_commits_from_json()
         all_files = get_all_files(commit_data)
 
@@ -207,7 +173,8 @@ class NEO:
         return developers_per_file_count
 
     # Inside your analyze_developers method
-    def analyze_developers(self):
+    # Inside your analyze_developers2 method
+    def analyze_developers2(self):
         commit_data = get_commits_from_json()
         all_files = get_all_files(commit_data)
 
@@ -217,7 +184,9 @@ class NEO:
         developers_per_file_count = self.calculate_developers_per_file_count(commit_data)
         mavenness_per_developer = self.calculate_mavenness(file_counts, developers_per_file_count)
 
-        self.classify_developers_and_update_neo4j(coverage_ratios, file_counts)
+        # Classify developers and update Neo4j
+        self.classify_developers_and_update_neo4j(coverage_ratios, file_counts, mavenness_per_developer)
+
         commit_data = get_commits_from_json()
         all_files = get_all_files(commit_data)
 
@@ -226,9 +195,6 @@ class NEO:
 
         developers_per_file = self.calculate_developers_per_file(commit_data)
         files_modified_by_fewest = self.find_files_modified_by_fewest_developers(developers_per_file)
-
-        self.classify_developers_and_update_neo4j(coverage_ratios, file_counts)
-
 
         # Print or store information about Mavenness for each developer
         with open('mavenness_classification.txt', 'w') as mavenness_output_file:
@@ -242,3 +208,41 @@ class NEO:
             mavenness_output_file.write("\nFiles modified by the fewest developers:\n")
             for modified_file in files_modified_by_fewest:
                 mavenness_output_file.write(f"{modified_file}: {len(developers_per_file[modified_file])} developers\n")
+
+    # Inside your NEO class
+    def classify_developers_and_update_neo4j(self, coverage_ratios, file_counts, mavenness_per_developer,
+                                             threshold=0.19):
+        classified_developers = {}
+        total_files_changed = {}
+
+        for author, ratio in coverage_ratios.items():
+            classification = 'Jack' if ratio > threshold else 'Not Jack'
+            classified_developers[author] = classification
+            total_files_changed[author] = len(file_counts[author])
+
+        # Update Neo4j with developer classification
+        neo4j_update_commands = []
+        for author, classification in classified_developers.items():
+            # Add classification based on Mavenness
+            mavenness_classification = mavenness_per_developer.get(author, 0.0)
+            neo4j_update_commands.append(
+                f"MATCH (d:Developer {{developer_name: '{author}'}}) "
+                f"SET d.classification = '{classification}', d.mavenness_classification = {mavenness_classification}"
+            )
+
+        execute_nodes(neo4j_update_commands)
+
+        # Write classification and file information to a file
+        with open('developer_classifications.txt', 'w') as file:
+            file.write("Developer Classifications:\n")
+            for author, classification in classified_developers.items():
+                file.write(f"{author}: {classification}\n")
+
+            total_files = sum(total_files_changed.values())
+            file.write("\nDeveloper File Information:\n")
+            file.write(f"Threshold: {threshold}\n")
+            file.write(f"Total files: {total_files}\n\n")
+
+            for author, files_changed in total_files_changed.items():
+                ratio = (files_changed / total_files) * 100
+                file.write(f"{author}: Files Changed - {files_changed}, Ratio - {ratio:.2f}%\n")
