@@ -76,6 +76,8 @@ class NEO:
             issue_execution_commands.append(neo4j_create_statement)
         execute_nodes(issue_execution_commands)
 
+
+
         # Create Commit Nodes' Cypher code and connect with Neo4j
         commit_data = read_from_json('commit_data.json')
         commit_execution_commands = []
@@ -98,7 +100,37 @@ class NEO:
 
             commit_execution_commands.append(neo4j_create_statement)
 
-    # Create relationships between Commit-Developer
+        # Create relationships between Issue-Developer based on closed_by
+        issue_developer_relation_commands_closed = []
+        for issue in issues_data:
+            issue_id = issue['id'] if 'id' in issue else None
+            closed_by = issue['closed_by'] if 'closed_by' in issue else None
+
+            neo4j_create_relation_closed_by_statement = (
+                f"MATCH (i:Issue {{issue_id: {issue_id}}}), "
+                f"(d:Developer {{developer_name: '{closed_by}'}}) "
+                f"CREATE (i)-[:CLOSED_BY]->(d)"
+            )
+            issue_developer_relation_commands_closed.append(neo4j_create_relation_closed_by_statement)
+
+        execute_nodes(issue_developer_relation_commands_closed)
+
+        # Create relationships between Issue-Developer based on opened_by
+        issue_developer_relation_commands_opened = []
+        for issue in issues_data:
+            issue_id = issue['id'] if 'id' in issue else None
+            opened_by = issue['opened_by'] if 'opened_by' in issue else None
+
+            neo4j_create_relation_opened_by_statement = (
+                f"MATCH (i:Issue {{issue_id: {issue_id}}}), "
+                f"(d:Developer {{developer_name: '{opened_by}'}}) "
+                f"CREATE (i)-[:OPENED_BY]->(d)"
+            )
+            issue_developer_relation_commands_opened.append(neo4j_create_relation_opened_by_statement)
+
+        execute_nodes(issue_developer_relation_commands_opened)
+
+        # Create relationships between Commit-Developer
         neo4j_create_relation_dev_statement = (
             "MATCH (c:Commit), (d:Developer) "
             "WHERE c.commit_author = d.developer_name "

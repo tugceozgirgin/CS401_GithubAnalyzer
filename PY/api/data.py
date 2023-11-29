@@ -189,25 +189,31 @@ def extract_commit_data(github_link, dt1, dt2):
             'message': commit.msg,
             'author': commit.author.name,
             'commit_date': formatted_date,
-            'modified_files': [file.filename for file in commit.modified_files],
+            'modified_files': [],
             'lines_inserted': [],
             'lines_deleted': []
         }
         for modified_file in commit.modified_files:
-            lines_inserted = 0
-            lines_deleted = 0
-            for diff in modified_file.diff_parsed['added']:
-                lines_inserted += 1
-            for diff in modified_file.diff_parsed['deleted']:
-                lines_deleted += 1
+            file_name = modified_file.filename
 
-            commit_info['lines_inserted'].append(lines_inserted)
-            commit_info['lines_deleted'].append(lines_deleted)
+            # Check if the file has an excluded extension
+            excluded = any(file_name.endswith(ext) for ext in sum(excluded_extensions.values(), []))
+
+            if not excluded:
+                commit_info['modified_files'].append(file_name)
+
+                lines_inserted = 0
+                lines_deleted = 0
+                for diff in modified_file.diff_parsed['added']:
+                    lines_inserted += 1
+                for diff in modified_file.diff_parsed['deleted']:
+                    lines_deleted += 1
+
+                commit_info['lines_inserted'].append(lines_inserted)
+                commit_info['lines_deleted'].append(lines_deleted)
 
         commit_data.append(commit_info)
     return commit_data
-
-
 from github import Github
 
 

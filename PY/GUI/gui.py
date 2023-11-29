@@ -4,7 +4,8 @@ from tkinter import messagebox, ttk
 from tkcalendar import DateEntry
 from datetime import datetime, timedelta, timezone
 
-from PY.Analyzes.DeveloperAnalyzer import DeveloperAnalyzer
+from PY.analyzes.DeveloperAnalyzer import DeveloperAnalyzer
+#from PY.Analyzes.DeveloperAnalyzer import DeveloperAnalyzer
 from PY.database.connection import CONNECTION
 from PY.database.neo_db import NEO  # Import the NEO class
 
@@ -113,8 +114,10 @@ class GUI:
             commit_data = extract_commit_data(github_link, dt1, dt2)
             output_file_path = 'commit_data.json'
             dump_json_file(output_file_path, commit_data)
+            # ECE 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
+            #TUĞÇE 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
             issues_data = extract_issues(github_link,
-                                         "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")
+                                         "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")
             dump_json_file('issue_data.json', issues_data)
 
             # Load commit data from the temporary JSON file
@@ -136,8 +139,14 @@ class GUI:
         neo_instance.run()
         neo_instance.analyze_developers2()
 
+        # Instantiate DeveloperAnalyzer after loading commit data
         developer_analyzer = DeveloperAnalyzer(loaded_commit_data, github_link)
         developer_analyzer.show_similarity_ratios()
+        developer_analyzer.run_analysis()
+        developer_analyzer.plot_commits_per_developer()
+        developer_analyzer.plot_file_counts_per_developer()
+        developer_analyzer.plot_lines_per_developer()
+
 
         # connection_instance = CONNECTION()
         # connection_instance.run()
