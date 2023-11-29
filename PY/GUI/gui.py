@@ -4,18 +4,19 @@ from tkinter import messagebox, ttk
 from tkcalendar import DateEntry
 from datetime import datetime, timedelta, timezone
 
-from PY.analyzes.DeveloperAnalyzer import DeveloperAnalyzer
+from PY.Analyzes.DeveloperAnalyzer import DeveloperAnalyzer
 from PY.database.connection import CONNECTION
 from PY.database.neo_db import NEO  # Import the NEO class
 
 from PY.api.data import extract_commit_data_by_time, dump_json_file, extract_author_commit_counts, \
-    extract_changed_classes, extract_commit_data
+    extract_changed_classes, extract_commit_data, extract_issues
 
 # Define excluded extensions for various file types
 excluded_extensions = {
     'compiled': ['.class', '.pyc'],
     'system': ['.dll', '.exe', '.so']
 }
+
 
 class GUI:
     def __init__(self):
@@ -28,18 +29,21 @@ class GUI:
 
         # Checkbox to enable/disable date selections
         self.date_checkbox_var = tk.BooleanVar()
-        self.date_checkbox = ttk.Checkbutton(self.root, text="Enable Date Selection", variable=self.date_checkbox_var, command=self.toggle_date_entries)
+        self.date_checkbox = ttk.Checkbutton(self.root, text="Enable Date Selection", variable=self.date_checkbox_var,
+                                             command=self.toggle_date_entries)
         self.date_checkbox.pack(pady=5)
 
         # DateEntry widgets for selecting the time range
         self.date_label1 = tk.Label(self.root, text="Select start date:")
         self.date_label1.pack(pady=5)
-        self.date_entry1 = DateEntry(self.root, width=12, background='darkblue', foreground='white', borderwidth=2, state="disabled")
+        self.date_entry1 = DateEntry(self.root, width=12, background='darkblue', foreground='white', borderwidth=2,
+                                     state="disabled")
         self.date_entry1.pack(pady=5, padx=(0, 10))  # Adding padding to the right
 
         self.date_label2 = tk.Label(self.root, text="Select end date:")
         self.date_label2.pack(pady=5)
-        self.date_entry2 = DateEntry(self.root, width=12, background='darkblue', foreground='white', borderwidth=2, state="disabled")
+        self.date_entry2 = DateEntry(self.root, width=12, background='darkblue', foreground='white', borderwidth=2,
+                                     state="disabled")
         self.date_entry2.pack(pady=5)
 
         self.submit_button = tk.Button(self.root, text="Submit", command=self.submit_button_clicked)
@@ -110,6 +114,9 @@ class GUI:
             commit_data = extract_commit_data(github_link, dt1, dt2)
             output_file_path = 'commit_data.json'
             dump_json_file(output_file_path, commit_data)
+            issues_data = extract_issues(github_link,
+                                         "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")
+            dump_json_file('issue_data.json', issues_data)
 
             # Load commit data from the temporary JSON file
             with open(output_file_path, 'r') as infile:
@@ -133,19 +140,15 @@ class GUI:
         developer_analyzer = DeveloperAnalyzer(loaded_commit_data, github_link)
         developer_analyzer.show_similarity_ratios()
 
-
-
-
-        #connection_instance = CONNECTION()
-        #connection_instance.run()
+        # connection_instance = CONNECTION()
+        # connection_instance.run()
 
     def get_github_link(self):
         github_link = self.entry.get()
         return str(github_link)
 
+
 if __name__ == "__main__":
     gui_instance = GUI()
     gui_instance.run()
     github_link = gui_instance.get_github_link()  # Get the GitHub link from the GUI
-
-

@@ -1,6 +1,7 @@
 # data.py
 
 import json
+from github import Github
 from pydriller import Repository
 
 
@@ -121,36 +122,6 @@ def get_commits_from_json(json_file_path='commit_data.json'):
         commit_data = json.load(infile)
     return commit_data
 
-
-# def get_commits_from_json(json_file_path='commit_data.json'):
-#     with open(json_file_path, 'r') as infile:
-#         commit_data = json.load(infile)
-#
-#     commits = []
-#     for commit_id, commit in enumerate(commit_data, start=1):
-#         modified_files = commit['modified_files']
-#
-#         # Exclude files that end with extensions in excluded_extensions
-#         filtered_files = [file for file in modified_files if
-#                           not any(file.endswith(ext) for ext in get_all_extensions())]
-#
-#         commit_info = {
-#             'id': commit_id,
-#             'hash': commit['hash'],
-#             'message': commit['message'],
-#             'author': commit['author'],
-#             'commit_date': commit['commit_date'],
-#             'modified_files': filtered_files
-#         }
-#         commits.append(commit_info)
-#
-#     return commits
-#
-# def get_commits_from_json2(json_file_path='commit_data.json'):
-#     with open(json_file_path, 'r') as infile:
-#         commit_data = json.load(infile)
-#     return commit_data
-
 def get_all_extensions():
     extensions = []
     for ext_type, ext_list in excluded_extensions.items():
@@ -235,3 +206,50 @@ def extract_commit_data(github_link, dt1, dt2):
 
         commit_data.append(commit_info)
     return commit_data
+
+
+from github import Github
+
+
+def extract_issues(repo_url, access_token):
+    try:
+        g = Github(access_token)
+
+        # Extract username and repository name from the URL
+        repo_url_parts = repo_url.strip('/').split('/')
+        username, repo_name = repo_url_parts[-2:]
+
+        repo = g.get_repo(f"{username}/{repo_name}")
+
+        issues_data = []
+        for issue in repo.get_issues(state='all'):
+            issue_comments = issue.get_comments()
+            comments_list = list(issue_comments)
+            if len(comments_list) > 0:
+                opened_by = comments_list[0].user.login
+            else:
+                opened_by = issue.user.login if issue.user else None
+
+            issue_data = {
+                'id': issue.number,
+                'title': issue.title,
+                'description': issue.body,
+                'state': issue.state,
+                'created_at': issue.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'closed_at': issue.closed_at.strftime('%Y-%m-%d %H:%M:%S') if issue.closed_at else None,
+                'closed_by': issue.closed_by.login if issue.closed_by else None,
+                'opened_by': opened_by,
+                'comments': [{'author': comment.user.login,
+                              'comment_date': comment.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                              'comment_text': comment.body} for comment in issue_comments]
+            }
+            issues_data.append(issue_data)
+
+        return issues_data
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        return None
+
+
+
+
