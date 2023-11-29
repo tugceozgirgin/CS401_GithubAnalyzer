@@ -17,7 +17,6 @@ excluded_extensions = {
     'system': ['.dll', '.exe', '.so']
 }
 
-
 class GUI:
     def __init__(self):
         self.root = tk.Tk()
@@ -115,7 +114,7 @@ class GUI:
             output_file_path = 'commit_data.json'
             dump_json_file(output_file_path, commit_data)
             issues_data = extract_issues(github_link,
-                                         "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")
+                                         "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")
             dump_json_file('issue_data.json', issues_data)
 
             # Load commit data from the temporary JSON file

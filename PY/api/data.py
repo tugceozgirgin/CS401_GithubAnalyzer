@@ -117,10 +117,10 @@ def get_developers_from_json(json_file_path='commit_data.json'):
 import json
 
 
-def get_commits_from_json(json_file_path='commit_data.json'):
+def read_from_json(json_file_path):
     with open(json_file_path, 'r') as infile:
-        commit_data = json.load(infile)
-    return commit_data
+        data = json.load(infile)
+    return data
 
 def get_all_extensions():
     extensions = []

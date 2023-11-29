@@ -1,7 +1,7 @@
 import itertools
 from collections import defaultdict
 
-from PY.api.data import get_commits_from_json
+from PY.api.data import read_from_json
 
 
 class DeveloperAnalyzer:

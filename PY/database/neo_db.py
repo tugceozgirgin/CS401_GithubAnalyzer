@@ -3,7 +3,7 @@ from typing import Dict, List
 
 import pandas as pd
 from PY.api.data import get_files_from_json, \
-    get_developers_from_json, get_commits_from_json, get_all_files, \
+    get_developers_from_json, read_from_json, get_all_files, \
     calculate_file_change_coverage, calculate_file_change_coverage_ratio
 from neo4j import GraphDatabase
 
@@ -55,8 +55,29 @@ class NEO:
             file_execution_commands.append(neo4j_create_statement)
         execute_nodes(file_execution_commands)
 
+        # Create Issue Nodes
+        issues_data = read_from_json("issue_data.json")
+
+        # Prepare and execute Neo4j commands for creating Issue nodes
+        # Prepare Neo4j CREATE statements for Issue nodes
+        issue_execution_commands = []
+        for issue in issues_data:
+            neo4j_create_statement = (
+                    "CREATE (i:Issue {"
+                    "issue_id: " + str(issue['id']) + ", "
+                    "title: '" + issue['title'].replace("'", "\\'") + "', "
+                    "description: '" +issue['description'].replace("'", "\\'") + "', "
+                    "state: '" + issue['state'] + "', "
+                    "created_at: '" + issue['created_at'] + "', "
+                    "closed_at: " + (f"'{issue['closed_at']}'" if issue['closed_at'] is not None else "null") + ", "
+                    "closed_by: " + (f"'{issue['closed_by']}'" if issue['closed_by'] is not None else "null") + ", "
+                    "opened_by: '" +issue['opened_by'] + "'})"
+            )
+            issue_execution_commands.append(neo4j_create_statement)
+        execute_nodes(issue_execution_commands)
+
         # Create Commit Nodes' Cypher code and connect with Neo4j
-        commit_data = get_commits_from_json()
+        commit_data = read_from_json('commit_data.json')
         commit_execution_commands = []
 
         for i, commit in enumerate(commit_data, start=1):
@@ -109,7 +130,7 @@ class NEO:
         execute_nodes(commit_file_relation_commands)
 
     def analyze_developers1(self):
-        commit_data = get_commits_from_json()
+        commit_data = read_from_json('commit_data.json')
         all_files = get_all_files(commit_data)
 
         file_counts = calculate_file_change_coverage(commit_data)
@@ -175,7 +196,7 @@ class NEO:
     # Inside your analyze_developers method
     # Inside your analyze_developers2 method
     def analyze_developers2(self):
-        commit_data = get_commits_from_json()
+        commit_data = read_from_json('commit_data.json')
         all_files = get_all_files(commit_data)
 
         file_counts = calculate_file_change_coverage(commit_data)
@@ -187,7 +208,7 @@ class NEO:
         # Classify developers and update Neo4j
         self.classify_developers_and_update_neo4j(coverage_ratios, file_counts, mavenness_per_developer)
 
-        commit_data = get_commits_from_json()
+        commit_data = read_from_json('commit_data.json')
         all_files = get_all_files(commit_data)
 
         file_counts = calculate_file_change_coverage(commit_data)
