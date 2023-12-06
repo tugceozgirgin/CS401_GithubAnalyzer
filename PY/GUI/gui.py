@@ -5,7 +5,6 @@ from tkcalendar import DateEntry
 from datetime import datetime, timedelta, timezone
 
 from PY.analyzes.DeveloperAnalyzer import DeveloperAnalyzer
-#from PY.Analyzes.DeveloperAnalyzer import DeveloperAnalyzer
 from PY.database.connection import CONNECTION
 from PY.database.neo_db import NEO  # Import the NEO class
 
@@ -114,10 +113,8 @@ class GUI:
             commit_data = extract_commit_data(github_link, dt1, dt2)
             output_file_path = 'commit_data.json'
             dump_json_file(output_file_path, commit_data)
-            # ECE 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
-            #TUĞÇE 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
             issues_data = extract_issues(github_link,
-                                         "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")
+                                         "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")
             dump_json_file('issue_data.json', issues_data)
 
             # Load commit data from the temporary JSON file

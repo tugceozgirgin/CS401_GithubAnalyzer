@@ -15,6 +15,14 @@ def execute_nodes(commands):
         session.run(i)
 
 
+def standardize_name(name):
+    # Replace Turkish characters with their English counterparts
+    name = name.replace('ş', 's').replace('ı', 'i').replace('ğ', 'g').replace('Ğ','G').replace('ü', 'u').replace('Ü', 'U').replace('ö', 'o').replace('Ö', 'O').replace('İ', 'I').replace('Ş', 'S').replace('Ç', 'C').replace('ç', 'c')
+    # Remove non-alphanumeric characters, spaces, and convert to lowercase
+    standardized_name = ''.join(e for e in name if e.isalnum() or e.isspace()).lower().replace(" ", "")
+    return standardized_name
+
+
 class NEO:
     def __init__(self, github_link):
         self.github_link = github_link
@@ -36,8 +44,10 @@ class NEO:
         developer_list = pd.DataFrame(developer_data).values.tolist()
         developer_execution_commands = []
         for i in developer_list:
-            neo4j_create_statement = "CREATE (d:Developer {developer_id:" + str(i[0]) + ", developer_name:  '" + str(
-                i[1]) + "'})"
+            standardized_name = standardize_name(i[1])
+            neo4j_create_statement = (
+                f"CREATE (d:Developer {{developer_id: {i[0]}, developer_name: '{standardized_name}'}})"
+            )
             developer_execution_commands.append(neo4j_create_statement)
         execute_nodes(developer_execution_commands)
 
@@ -55,11 +65,31 @@ class NEO:
             file_execution_commands.append(neo4j_create_statement)
         execute_nodes(file_execution_commands)
 
+        # Create Commit Nodes' Cypher code and connect with Neo4j
+        commit_data = read_from_json('commit_data.json')
+        commit_execution_commands = []
+
+        for i, commit in enumerate(commit_data, start=1):
+            commit_id = i
+            commit_hash = commit['hash']
+            commit_author = commit['author']
+            standardized_author = standardize_name(commit_author)
+            commit_date = commit['commit_date']
+            modified_files = commit['modified_files']
+            lines_inserted = commit['lines_inserted']
+            lines_deleted = commit['lines_deleted']
+
+            neo4j_create_statement = (
+                f"CREATE (c:Commit {{commit_id: {commit_id}, commit_hash: '{commit_hash}', "
+                f"commit_author: '{standardized_author}', "
+                f"commit_date: '{commit_date}', modified_files: {json.dumps(modified_files)}, "
+                f"lines_inserted: {json.dumps(lines_inserted)}, lines_deleted: {json.dumps(lines_deleted)}}})"
+            )
+
+            commit_execution_commands.append(neo4j_create_statement)
+
         # Create Issue Nodes
         issues_data = read_from_json("issue_data.json")
-
-        # Prepare and execute Neo4j commands for creating Issue nodes
-        # Prepare Neo4j CREATE statements for Issue nodes
         issue_execution_commands = []
         for issue in issues_data:
             neo4j_create_statement = (
@@ -76,66 +106,39 @@ class NEO:
             issue_execution_commands.append(neo4j_create_statement)
         execute_nodes(issue_execution_commands)
 
+        # Create relationships between Developer and Issue nodes based on opened_by and closed_by fields
+        developer_issue_relation_commands = []
 
-
-        # Create Commit Nodes' Cypher code and connect with Neo4j
-        commit_data = read_from_json('commit_data.json')
-        commit_execution_commands = []
-
-        for i, commit in enumerate(commit_data, start=1):
-            commit_id = i
-            commit_hash = commit['hash']
-            commit_author = commit['author']
-            commit_date = commit['commit_date']
-            modified_files = commit['modified_files']
-            lines_inserted = commit['lines_inserted']
-            lines_deleted = commit['lines_deleted']
-
-            neo4j_create_statement = (
-                f"CREATE (c:Commit {{commit_id: {commit_id}, commit_hash: '{commit_hash}', "
-                f"commit_author: '{commit_author}', "
-                f"commit_date: '{commit_date}', modified_files: {json.dumps(modified_files)}, "
-                f"lines_inserted: {json.dumps(lines_inserted)}, lines_deleted: {json.dumps(lines_deleted)}}})"
-            )
-
-            commit_execution_commands.append(neo4j_create_statement)
-
-        # Create relationships between Issue-Developer based on closed_by
-        issue_developer_relation_commands_closed = []
         for issue in issues_data:
-            issue_id = issue['id'] if 'id' in issue else None
-            closed_by = issue['closed_by'] if 'closed_by' in issue else None
+            opened_by = issue['opened_by']
+            closed_by = issue['closed_by']
 
-            neo4j_create_relation_closed_by_statement = (
-                f"MATCH (i:Issue {{issue_id: {issue_id}}}), "
-                f"(d:Developer {{developer_name: '{closed_by}'}}) "
-                f"CREATE (i)-[:CLOSED_BY]->(d)"
-            )
-            issue_developer_relation_commands_closed.append(neo4j_create_relation_closed_by_statement)
+            if opened_by:
+                opened_by_standardized = standardize_name(opened_by)
+                neo4j_create_relation_dev_issue_statement = (
+                    f"MATCH (d1:Developer {{developer_name: '{opened_by_standardized}'}}), "
+                    f"(i:Issue {{issue_id: {issue['id']}}}) "
+                    f"CREATE (d1)-[:OPENED]->(i)"
+                )
+                developer_issue_relation_commands.append(neo4j_create_relation_dev_issue_statement)
 
-        execute_nodes(issue_developer_relation_commands_closed)
+            if closed_by:
+                closed_by_standardized = standardize_name(closed_by)
+                neo4j_create_relation_dev_issue_statement = (
+                    f"MATCH (d2:Developer {{developer_name: '{closed_by_standardized}'}}), "
+                    f"(i:Issue {{issue_id: {issue['id']}}}) "
+                    f"CREATE (i)-[:CLOSED_BY]->(d2)"
+                )
+                developer_issue_relation_commands.append(neo4j_create_relation_dev_issue_statement)
 
-        # Create relationships between Issue-Developer based on opened_by
-        issue_developer_relation_commands_opened = []
-        for issue in issues_data:
-            issue_id = issue['id'] if 'id' in issue else None
-            opened_by = issue['opened_by'] if 'opened_by' in issue else None
-
-            neo4j_create_relation_opened_by_statement = (
-                f"MATCH (i:Issue {{issue_id: {issue_id}}}), "
-                f"(d:Developer {{developer_name: '{opened_by}'}}) "
-                f"CREATE (i)-[:OPENED_BY]->(d)"
-            )
-            issue_developer_relation_commands_opened.append(neo4j_create_relation_opened_by_statement)
-
-        execute_nodes(issue_developer_relation_commands_opened)
+        execute_nodes(developer_issue_relation_commands)
 
         # Create relationships between Commit-Developer
         neo4j_create_relation_dev_statement = (
             "MATCH (c:Commit), (d:Developer) "
             "WHERE c.commit_author = d.developer_name "
             "MERGE (d)-[:DEVELOPED_BY]->(c)"
-         )
+        )
         commit_execution_commands.append(neo4j_create_relation_dev_statement)
         execute_nodes(commit_execution_commands)
 
