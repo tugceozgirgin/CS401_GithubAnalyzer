@@ -5,6 +5,7 @@ from tkcalendar import DateEntry
 from datetime import datetime, timedelta, timezone
 
 from PY.analyzes.DeveloperAnalyzer import DeveloperAnalyzer
+#from PY.analyzes.graph_algorithms import GraphAlgorithms
 from PY.database.connection import CONNECTION
 from PY.database.neo_db import NEO  # Import the NEO class
 
@@ -114,7 +115,7 @@ class GUI:
             output_file_path = 'commit_data.json'
             dump_json_file(output_file_path, commit_data)
             issues_data = extract_issues(github_link,
-                                         "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")
+                                         "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")
             dump_json_file('issue_data.json', issues_data)
 
             # Load commit data from the temporary JSON file
@@ -143,6 +144,11 @@ class GUI:
         developer_analyzer.plot_commits_per_developer()
         developer_analyzer.plot_file_counts_per_developer()
         developer_analyzer.plot_lines_per_developer()
+        developer_analyzer.plot_all()
+
+
+        #graph_algorithms = GraphAlgorithms("bolt://localhost:7687", "neo4j", "password")
+        #graph_algorithms.run()
 
 
         # connection_instance = CONNECTION()

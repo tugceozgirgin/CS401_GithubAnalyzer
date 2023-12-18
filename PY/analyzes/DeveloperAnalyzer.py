@@ -1,6 +1,8 @@
 import itertools
 from collections import defaultdict, Counter
 import matplotlib.pyplot as plt
+import numpy as np
+
 
 from PY.api.data import read_from_json
 
@@ -178,3 +180,100 @@ class DeveloperAnalyzer:
         plt.tight_layout()
 
         plt.show()
+
+
+    def plot_all(self):
+        # Commit, file ve line sayılarını bir araya getirip tek bir grafikte gösterme
+
+        # 1. Developer bazında commit sayıları
+        commits_per_developer = self.count_commits_per_developer()
+
+        # 2. Developer bazında modified file sayıları
+        modified_files_per_developer = self.count_modified_files_by_developer()
+
+        # 3. Developer bazında modified line sayıları
+        modified_lines_per_developer = self.count_modified_lines_by_developer()
+
+        # Ortalamaları hesapla
+        avg_commits = sum(commits_per_developer.values()) / len(commits_per_developer)
+        avg_files = sum(modified_files_per_developer.values()) / len(modified_files_per_developer)
+        avg_lines = sum(modified_lines_per_developer.values()) / len(modified_lines_per_developer)
+
+        # Ortalamaları eşitleyecek katsayıları belirle
+        coeff_commits = avg_lines / avg_commits
+        coeff_files = avg_lines / avg_files
+
+        # Eşitleme katsayılarını uygula
+        modified_commits_per_developer = {dev: count * coeff_commits for dev, count in commits_per_developer.items()}
+        modified_files_per_developer = {dev: count * coeff_files for dev, count in modified_files_per_developer.items()}
+        modified_lines_per_developer = {dev: count for dev, count in modified_lines_per_developer.items()}
+
+        # 4. Grafikleme
+        developers = list(commits_per_developer.keys())
+
+        # Tek bir grafikte barlar
+        plt.figure(figsize=(12, 6))
+        bar_width = 0.2
+        plt.bar(developers, modified_commits_per_developer.values(), width=bar_width, color='blue', label='Modified Commits Counts')
+        plt.bar([pos + bar_width for pos in range(len(developers))],
+                modified_files_per_developer.values(), width=bar_width, color='green', label='Modified Files Counts')
+        plt.bar([pos + 2 * bar_width for pos in range(len(developers))],
+                modified_lines_per_developer.values(), width=bar_width, color='orange', label='Lines Modified')
+
+        # Eksen etiketleri, başlık ve legend ayarları
+        plt.xlabel('Developers')
+        plt.ylabel('Counts (scaled for balance)')
+        plt.title('Comprehensive Analysis: Commits, Modified Files, and Modified Lines per Developer')
+        plt.xticks([pos + bar_width for pos in range(len(developers))], developers, rotation=45, ha='right')
+        plt.legend()
+
+        plt.tight_layout()
+        plt.show()
+
+    def plot_all(self):
+        # 1. Developer bazında commit sayıları
+        commits_per_developer = self.count_commits_per_developer()
+
+        # 2. Developer bazında modified file sayıları
+        modified_files_per_developer = self.count_modified_files_by_developer()
+
+        # 3. Developer bazında modified line sayıları
+        modified_lines_per_developer = self.count_modified_lines_by_developer()
+
+        # Ortalamaları hesapla
+        avg_commits = sum(commits_per_developer.values()) / len(commits_per_developer)
+        avg_files = sum(modified_files_per_developer.values()) / len(modified_files_per_developer)
+        avg_lines = sum(modified_lines_per_developer.values()) / len(modified_lines_per_developer)
+
+        # Ortalamaları eşitleyecek katsayıları belirle
+        coeff_commits = avg_lines / avg_commits
+        coeff_files = avg_lines / avg_files
+
+        # Eşitleme katsayılarını uygula
+        modified_commits_per_developer = {dev: count * coeff_commits for dev, count in commits_per_developer.items()}
+        modified_files_per_developer = {dev: count * coeff_files for dev, count in modified_files_per_developer.items()}
+        modified_lines_per_developer = {dev: count for dev, count in modified_lines_per_developer.items()}
+
+        # 4. Grafikleme
+        developers = list(commits_per_developer.keys())
+
+        # Tek bir grafikte barlar
+        plt.figure(figsize=(12, 6))
+        bar_width = 0.2
+        plt.bar(developers, modified_commits_per_developer.values(), width=bar_width, color='blue',
+                label='Modified Commits Counts')
+        plt.bar([pos + bar_width for pos in range(len(developers))],
+                modified_files_per_developer.values(), width=bar_width, color='green', label='Modified Files Counts')
+        plt.bar([pos + 2 * bar_width for pos in range(len(developers))],
+                modified_lines_per_developer.values(), width=bar_width, color='orange', label='Lines Modified')
+
+        # Eksen etiketleri, başlık ve legend ayarları
+        plt.xlabel('Developers')
+        plt.ylabel('Counts (scaled for balance)')
+        plt.title('Comprehensive Analysis: Commits, Modified Files, and Modified Lines per Developer')
+        plt.xticks([pos + bar_width for pos in range(len(developers))], developers, rotation=45, ha='right')
+        plt.legend()
+
+        plt.tight_layout()
+        plt.show()
+
