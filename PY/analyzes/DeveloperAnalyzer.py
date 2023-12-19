@@ -7,8 +7,9 @@ import numpy as np
 from PY.api.data import read_from_json
 
 class DeveloperAnalyzer:
-    def __init__(self, commit_data, github_link=None):
+    def __init__(self, commit_data, issues_data, github_link=None):
         self.commit_data = commit_data
+        self.issues_data = issues_data
         self.developers = self.get_developers()
         self.github_link = github_link
 
@@ -276,4 +277,72 @@ class DeveloperAnalyzer:
 
         plt.tight_layout()
         plt.show()
+
+    def plot_combined_boxplot(self):
+        # Calculate modified lines and file counts
+        modified_lines_per_developer = self.count_modified_lines_by_developer()
+        file_counts = list(self.count_modified_files_by_developer().values())
+        developers = list(modified_lines_per_developer.keys())
+
+        # Create a list of modified lines for each developer
+        modified_lines_data = [[modified_lines_per_developer[dev]] for dev in developers]
+
+        fig, ax1 = plt.subplots()
+
+        # Box plot for Lines of Code (LOC) Changed per Developer
+        box = ax1.boxplot(modified_lines_data, widths=0.7, patch_artist=True)
+        ax1.set_xlabel('Developers')
+        ax1.set_xticks(range(1, len(developers) + 1))
+        ax1.set_xticklabels(developers, rotation=45, ha='right')  # Display x-axis labels (developers) with rotation
+
+        # Add points or whiskers for Modified File Counts
+        ax2 = ax1.twiny()
+        ax2.scatter(range(1, len(file_counts) + 1), file_counts, marker='o', color='red', label='File Counts')
+        ax2.set_xlabel('Modified File Counts')
+        ax2.set_xticks(range(1, len(developers) + 1))
+        ax2.set_xticklabels([])  # Remove x-axis labels from the second axis
+
+        # Combine box and whisker colors
+        box_colors = ['lightblue']
+        for patch, color in zip(box['boxes'], box_colors):
+            patch.set_facecolor(color)
+
+        # Set title and legend
+        plt.title(
+            'Combined Box Plot of Lines of Code (LOC) Changed and Modified File Counts per Developer')
+        ax2.legend(loc='upper left')
+
+        plt.tight_layout()
+        plt.show()
+
+    def count_closed_issues_by_developer(self):
+        closed_issues_per_developer = defaultdict(list)
+
+        for issue in self.issues_data:
+            developer = issue.get('closed_by')  # Assuming 'closed_by' holds the developer information
+            if developer:
+                closed_issues_per_developer[developer].append(issue['id'])
+
+        return {developer: len(issues) for developer, issues in closed_issues_per_developer.items()}
+
+    def plot_closed_issues_per_developer(self):
+        count_closed_issues_by_developer = self.count_closed_issues_by_developer()
+
+        if count_closed_issues_by_developer is None:
+            # You may want to handle the case where data is not available
+            print("Closed issues data is not available.")
+            return
+
+        developers = list(count_closed_issues_by_developer.keys())
+        closed_issues_count = list(count_closed_issues_by_developer.values())
+
+        plt.bar(developers, closed_issues_count, color='purple')
+        plt.xlabel('Developers')
+        plt.ylabel('Closed Issues Counts')
+        plt.title('Closed Issues Counts per Developer')
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+
+        plt.show()
+
 

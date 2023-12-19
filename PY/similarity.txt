@@ -1,16 +1,16 @@
+Similarity Ratio between Ece Karataþ and tugceozgirgin: 7.41%
+Similarity Ratio between Ece Karataþ and elifozmen: 20.00%
+Similarity Ratio between Ece Karataþ and Saeed-Muhaisen: 13.79%
+Similarity Ratio between Ece Karataþ and Ed: 7.55%
+Similarity Ratio between Ece Karataþ and jana ayoub: 60.00%
+Similarity Ratio between tugceozgirgin and elifozmen: 17.86%
+Similarity Ratio between tugceozgirgin and Saeed-Muhaisen: 50.00%
+Similarity Ratio between tugceozgirgin and Ed: 47.17%
+Similarity Ratio between tugceozgirgin and jana ayoub: 11.54%
+Similarity Ratio between elifozmen and Saeed-Muhaisen: 15.62%
+Similarity Ratio between elifozmen and Ed: 15.09%
+Similarity Ratio between elifozmen and jana ayoub: 33.33%
 Similarity Ratio between Saeed-Muhaisen and Ed: 41.38%
 Similarity Ratio between Saeed-Muhaisen and jana ayoub: 10.00%
-Similarity Ratio between Saeed-Muhaisen and elifozmen: 15.62%
-Similarity Ratio between Saeed-Muhaisen and tugceozgirgin: 50.00%
-Similarity Ratio between Saeed-Muhaisen and Ece Karataþ: 13.79%
 Similarity Ratio between Ed and jana ayoub: 7.55%
-Similarity Ratio between Ed and elifozmen: 15.09%
-Similarity Ratio between Ed and tugceozgirgin: 47.17%
-Similarity Ratio between Ed and Ece Karataþ: 7.55%
-Similarity Ratio between jana ayoub and elifozmen: 33.33%
-Similarity Ratio between jana ayoub and tugceozgirgin: 11.54%
-Similarity Ratio between jana ayoub and Ece Karataþ: 60.00%
-Similarity Ratio between elifozmen and tugceozgirgin: 17.86%
-Similarity Ratio between elifozmen and Ece Karataþ: 20.00%
-Similarity Ratio between tugceozgirgin and Ece Karataþ: 7.41%
-The most compatible developer for hedef_gelistirici is Saeed-Muhaisen with a similarity ratio of 0.00%
+The most compatible developer for hedef_gelistirici is Ece Karataþ with a similarity ratio of 0.00%

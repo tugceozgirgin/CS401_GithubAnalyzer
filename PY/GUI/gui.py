@@ -115,12 +115,18 @@ class GUI:
             output_file_path = 'commit_data.json'
             dump_json_file(output_file_path, commit_data)
             issues_data = extract_issues(github_link,
-                                         "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")
+                                         "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")
+            output_file_path_issues = 'issue_data.json'
             dump_json_file('issue_data.json', issues_data)
 
             # Load commit data from the temporary JSON file
             with open(output_file_path, 'r') as infile:
                 loaded_commit_data = json.load(infile)
+
+            with open(output_file_path_issues, 'r') as infile:
+                loaded_issue_data = json.load(infile)
+
+
 
             author_commit_counts = extract_author_commit_counts(loaded_commit_data)
             changed_classes = extract_changed_classes(loaded_commit_data)
@@ -138,14 +144,16 @@ class GUI:
         neo_instance.analyze_developers2()
 
         # Instantiate DeveloperAnalyzer after loading commit data
-        developer_analyzer = DeveloperAnalyzer(loaded_commit_data, github_link)
+        developer_analyzer = DeveloperAnalyzer(loaded_commit_data, loaded_issue_data, github_link)
         developer_analyzer.show_similarity_ratios()
         developer_analyzer.run_analysis()
         developer_analyzer.plot_commits_per_developer()
         developer_analyzer.plot_file_counts_per_developer()
         developer_analyzer.plot_lines_per_developer()
         developer_analyzer.plot_all()
+        #developer_analyzer.plot_combined_boxplot()
 
+        developer_analyzer.plot_closed_issues_per_developer()
 
         #graph_algorithms = GraphAlgorithms("bolt://localhost:7687", "neo4j", "password")
         #graph_algorithms.run()
