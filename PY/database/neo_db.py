@@ -1,11 +1,15 @@
+import datetime as dt
 import json
 from typing import Dict, List
 
 import pandas as pd
 from PY.api.data import get_files_from_json, \
     get_developers_from_json, read_from_json, get_all_files, \
-    calculate_file_change_coverage, calculate_file_change_coverage_ratio
+    calculate_file_change_coverage, calculate_file_change_coverage_ratio, get_first_last_commit_dates
 from neo4j import GraphDatabase
+
+commit_data = read_from_json('commit_data.json')
+first_date, last_date = get_first_last_commit_dates(commit_data)
 
 
 def execute_nodes(commands):
@@ -17,10 +21,27 @@ def execute_nodes(commands):
 
 def standardize_name(name):
     # Replace Turkish characters with their English counterparts
-    name = name.replace('ş', 's').replace('ı', 'i').replace('ğ', 'g').replace('Ğ','G').replace('ü', 'u').replace('Ü', 'U').replace('ö', 'o').replace('Ö', 'O').replace('İ', 'I').replace('Ş', 'S').replace('Ç', 'C').replace('ç', 'c')
+    name = name.replace('ş', 's').replace('ı', 'i').replace('ğ', 'g').replace('Ğ', 'G').replace('ü', 'u').replace('Ü',
+                                                                                                                  'U').replace(
+        'ö', 'o').replace('Ö', 'O').replace('İ', 'I').replace('Ş', 'S').replace('Ç', 'C').replace('ç', 'c')
     # Remove non-alphanumeric characters, spaces, and convert to lowercase
     standardized_name = ''.join(e for e in name if e.isalnum() or e.isspace()).lower().replace(" ", "")
     return standardized_name
+
+
+def calculate_recency(targetdate):
+    days_in_graph = calculate_date_difference_in_days(first_date, last_date)
+    print(days_in_graph)
+    days_passed = days_in_graph - calculate_date_difference_in_days(first_date, targetdate)
+    print(days_passed)
+    return 1 - (days_passed / days_in_graph)
+
+
+def calculate_date_difference_in_days(first_date_str, last_date_str):
+    first_date = dt.datetime.strptime(first_date_str, '%Y-%m-%d %H:%M:%S')
+    last_date = dt.datetime.strptime(last_date_str, '%Y-%m-%d %H:%M:%S')
+    difference = last_date - first_date
+    return difference.days
 
 
 class NEO:
@@ -66,7 +87,7 @@ class NEO:
         execute_nodes(file_execution_commands)
 
         # Create Commit Nodes' Cypher code and connect with Neo4j
-        commit_data = read_from_json('commit_data.json')
+
         commit_execution_commands = []
 
         for i, commit in enumerate(commit_data, start=1):
@@ -95,13 +116,18 @@ class NEO:
             neo4j_create_statement = (
                     "CREATE (i:Issue {"
                     "issue_id: " + str(issue['id']) + ", "
-                    "title: '" + issue['title'].replace("'", "\\'") + "', "
-                    "description: '" +issue['description'].replace("'", "\\'") + "', "
-                    "state: '" + issue['state'] + "', "
-                    "created_at: '" + issue['created_at'] + "', "
-                    "closed_at: " + (f"'{issue['closed_at']}'" if issue['closed_at'] is not None else "null") + ", "
-                    "closed_by: " + (f"'{issue['closed_by']}'" if issue['closed_by'] is not None else "null") + ", "
-                    "opened_by: '" +issue['opened_by'] + "'})"
+                                                      "title: '" + issue['title'].replace("'", "\\'") + "', "
+                                                                                                        "description: '" +
+                    issue['description'].replace("'", "\\'") + "', "
+                                                               "state: '" + issue['state'] + "', "
+                                                                                             "created_at: '" + issue[
+                        'created_at'] + "', "
+                                        "closed_at: " + (
+                        f"'{issue['closed_at']}'" if issue['closed_at'] is not None else "null") + ", "
+                                                                                                   "closed_by: " + (
+                        f"'{issue['closed_by']}'" if issue['closed_by'] is not None else "null") + ", "
+                                                                                                   "opened_by: '" +
+                    issue['opened_by'] + "'})"
             )
             issue_execution_commands.append(neo4j_create_statement)
         execute_nodes(issue_execution_commands)
@@ -150,6 +176,8 @@ class NEO:
             modified_files = commit['modified_files']
             lines_inserted = commit['lines_inserted']
             lines_deleted = commit['lines_deleted']
+            recency = calculate_recency(commit['commit_date'])
+            distance = calculate_date_difference_in_days(first_date,last_date) if recency == 0 else 1 / recency
 
             for idx, file_name in enumerate(modified_files):
                 inserted = lines_inserted[idx]
@@ -158,14 +186,13 @@ class NEO:
                 neo4j_create_relation_file_statement = (
                     f"MATCH (c:Commit {{commit_hash: '{commit_hash}'}}), "
                     f"(f:Files {{file_name: '{file_name}'}}) "
-                    f"CREATE (c)-[:MODIFIED {{inserted_lines: {inserted}, deleted_lines: {deleted}}}]->(f)"
+                    f"CREATE (c)-[:MODIFIED {{inserted_lines: {inserted}, deleted_lines: {deleted},distance: {distance}}}]->(f)"
                 )
                 commit_file_relation_commands.append(neo4j_create_relation_file_statement)
 
         execute_nodes(commit_file_relation_commands)
 
     def analyze_developers1(self):
-        commit_data = read_from_json('commit_data.json')
         all_files = get_all_files(commit_data)
 
         file_counts = calculate_file_change_coverage(commit_data)
@@ -231,7 +258,6 @@ class NEO:
     # Inside your analyze_developers method
     # Inside your analyze_developers2 method
     def analyze_developers2(self):
-        commit_data = read_from_json('commit_data.json')
         all_files = get_all_files(commit_data)
 
         file_counts = calculate_file_change_coverage(commit_data)
@@ -243,7 +269,6 @@ class NEO:
         # Classify developers and update Neo4j
         self.classify_developers_and_update_neo4j(coverage_ratios, file_counts, mavenness_per_developer)
 
-        commit_data = read_from_json('commit_data.json')
         all_files = get_all_files(commit_data)
 
         file_counts = calculate_file_change_coverage(commit_data)

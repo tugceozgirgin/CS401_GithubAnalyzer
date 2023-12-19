@@ -115,7 +115,7 @@ class GUI:
             output_file_path = 'commit_data.json'
             dump_json_file(output_file_path, commit_data)
             issues_data = extract_issues(github_link,
-                                         "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")
+                                         "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")
             output_file_path_issues = 'issue_data.json'
             dump_json_file('issue_data.json', issues_data)
 
