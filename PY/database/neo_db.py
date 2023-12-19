@@ -31,9 +31,7 @@ def standardize_name(name):
 
 def calculate_recency(targetdate):
     days_in_graph = calculate_date_difference_in_days(first_date, last_date)
-    print(days_in_graph)
     days_passed = days_in_graph - calculate_date_difference_in_days(first_date, targetdate)
-    print(days_passed)
     return 1 - (days_passed / days_in_graph)
 
 
@@ -116,9 +114,8 @@ class NEO:
             neo4j_create_statement = (
                     "CREATE (i:Issue {"
                     "issue_id: " + str(issue['id']) + ", "
-                                                      "title: '" + issue['title'].replace("'", "\\'") + "', "
-                                                                                                        "description: '" +
-                    issue['description'].replace("'", "\\'") + "', "
+                    "title: '" + issue['title'].replace("'", "\\'") + "', "
+                    "description: '" + issue['description'].replace("'", "\\'") + "', "
                                                                "state: '" + issue['state'] + "', "
                                                                                              "created_at: '" + issue[
                         'created_at'] + "', "
@@ -160,16 +157,28 @@ class NEO:
         execute_nodes(developer_issue_relation_commands)
 
         # Create relationships between Commit-Developer
-        neo4j_create_relation_dev_statement = (
+        # Create relationships between Developer-Commit
+        neo4j_create_relation_dev_statement_commit = (
             "MATCH (c:Commit), (d:Developer) "
             "WHERE c.commit_author = d.developer_name "
-            "MERGE (d)-[:DEVELOPED_BY]->(c)"
+            "MERGE (c)-[:DEVELOPED_BY]->(d)"
         )
-        commit_execution_commands.append(neo4j_create_relation_dev_statement)
+        commit_execution_commands.append(neo4j_create_relation_dev_statement_commit)
+
+        # Create bidirectional relationships between Commit and Developer nodes
+        bidirectional_dev_commit_relation = (
+            "MATCH (c:Commit), (d:Developer) "
+            "WHERE c.commit_author = d.developer_name "
+            "MERGE (d)-[:DEVELOPED]->(c)"
+        )
+        commit_execution_commands.append(bidirectional_dev_commit_relation)
+
         execute_nodes(commit_execution_commands)
+
 
         # Create relationships between Commit-File based on modified_files
         commit_file_relation_commands = []
+        file_commit_relation_commands = []  # New list for file->commit relationship commands
 
         for commit in commit_data:
             commit_hash = commit['hash']
@@ -177,7 +186,7 @@ class NEO:
             lines_inserted = commit['lines_inserted']
             lines_deleted = commit['lines_deleted']
             recency = calculate_recency(commit['commit_date'])
-            distance = calculate_date_difference_in_days(first_date,last_date) if recency == 0 else 1 / recency
+            distance = calculate_date_difference_in_days(first_date, last_date) if recency == 0 else 1 / recency
 
             for idx, file_name in enumerate(modified_files):
                 inserted = lines_inserted[idx]
@@ -186,11 +195,21 @@ class NEO:
                 neo4j_create_relation_file_statement = (
                     f"MATCH (c:Commit {{commit_hash: '{commit_hash}'}}), "
                     f"(f:Files {{file_name: '{file_name}'}}) "
-                    f"CREATE (c)-[:MODIFIED {{inserted_lines: {inserted}, deleted_lines: {deleted},distance: {distance}}}]->(f)"
+                    f"CREATE (c)-[:MODIFIED {{inserted_lines: {inserted}, deleted_lines: {deleted}, distance: {distance}}}]->(f)"
                 )
                 commit_file_relation_commands.append(neo4j_create_relation_file_statement)
 
+                # New relationship creation from File to Commit
+                file_to_commit_statement = (
+                    f"MATCH (c:Commit {{commit_hash: '{commit_hash}'}}), "
+                    f"(f:Files {{file_name: '{file_name}'}}) "
+                    f"CREATE (f)-[:MODIFIED_BY {{inserted_lines: {inserted}, deleted_lines: {deleted}, distance: {distance}}}]->(c)"
+                )
+                file_commit_relation_commands.append(file_to_commit_statement)
+
+        # Execute both types of relationship commands
         execute_nodes(commit_file_relation_commands)
+        execute_nodes(file_commit_relation_commands)
 
     def analyze_developers1(self):
         all_files = get_all_files(commit_data)
@@ -327,3 +346,13 @@ class NEO:
             for author, files_changed in total_files_changed.items():
                 ratio = (files_changed / total_files) * 100
                 file.write(f"{author}: Files Changed - {files_changed}, Ratio - {ratio:.2f}%\n")
+
+
+ # # Create relationships between Developer-Commit
+ #        neo4j_create_relation_dev_statement_commit = (
+ #            "MATCH (c:Commit), (d:Developer) "
+ #            "WHERE c.commit_author = d.developer_name "
+ #            "MERGE (c)-[:DEVELOPED_BY]->(d)"
+ #        )
+ #        commit_execution_commands.append(neo4j_create_relation_dev_statement_commit)
+ #        execute_nodes(commit_execution_commands)
