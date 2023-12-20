@@ -1,5 +1,6 @@
 from collections import defaultdict
 
+from matplotlib import pyplot as plt
 from neo4j import GraphDatabase
 
 class GraphAlgorithms:
@@ -143,30 +144,99 @@ class GraphAlgorithms:
         sorted_dev_to_mavenness = self.sort_by_value(dev_to_mavenness)
         return sorted_dev_to_mavenness
 
+    def find_replacements_for_all(self):
+        dev_to_files = self.dev_to_files()
+        all_devs = set(dev_to_files.keys())
+
+        all_replacements = {}
+
+        for leaving_dev in all_devs:
+            leaving_dev_files = dev_to_files.get(leaving_dev, set())
+            other_devs = all_devs - {leaving_dev}
+
+            dev_to_overlapping_knowledge = defaultdict(float)
+
+            for dev in other_devs:
+                dev_files = dev_to_files.get(dev, set())
+                common_elements=0
+                for file in leaving_dev_files:
+                    for file2 in dev_files:
+                        if(file['file_id']==file2['file_id']):
+                            common_elements= common_elements+1
+                overlapping_knowledge = common_elements / len(leaving_dev_files) if len(leaving_dev_files) > 0 else 0
+                dev_to_overlapping_knowledge[dev] = overlapping_knowledge
+                print(dev_to_files)
+
+            sorted_dev_to_overlapping_knowledge = self.sort_by_value(dev_to_overlapping_knowledge)
+            all_replacements[leaving_dev] = sorted_dev_to_overlapping_knowledge
+
+        return all_replacements
+
+
 
 # Graph instance creation and function execution
 graph = GraphAlgorithms()
-developers = graph.get_developers()
-print(developers)
-reachable_files = graph.dev_to_files()
-print(reachable_files)
+# developers = graph.get_developers()
+# print(developers)
+# reachable_files = graph.dev_to_files()
+# print(reachable_files)
+#
+# result = graph.find_jacks()
+# # Print the result to the console
+# print("Developer Classification:")
+# for developer, file_coverage in result.items():
+#     print(f"{developer}: {file_coverage:.2%} (Jack: {graph.is_jack(result, developer)})")
+#
+# # Extract developers and their corresponding Jack percentages
+# developers = list(result.keys())
+# jack_percentages = [result[developer] for developer in developers]
+#
+# # Plotting
+# plt.figure(figsize=(10, 6))
+# plt.bar(developers, jack_percentages, color='blue')
+# plt.title('Jack Percentage for Each Developer')
+# plt.xlabel('Developers')
+# plt.ylabel('Jack Percentage')
+# plt.ylim(0, 1)  # Set the y-axis limit to represent percentages (0% to 100%)
+#
+#
+# plt.show()
+#
+# threshold_value = 0.5  # You can adjust the threshold as needed
+# rare_files_result = graph.dev_to_rare_files()
+# # print("Rarely Reached Files per Developer:")
+# # for developer, files in rare_files_result.items():
+# #     print(f"{developer}: {files}")
+#
+# mavens_result = graph.find_mavens(threshold_value)
+# print("Mavenness per Developer:")
+# for developer, mavenness in mavens_result.items():
+#     print(f"{developer}: {mavenness:.2%}")
+#
+# developers_mavenness = list(mavens_result.keys())
+# mavenness_values = [mavens_result[developer] for developer in developers_mavenness]
+#
+# # Plotting Mavenness
+# plt.figure(figsize=(10, 6))
+# plt.bar(developers_mavenness, mavenness_values, color='orange')
+# plt.title('Mavenness per Developer')
+# plt.xlabel('Developers')
+# plt.ylabel('Mavenness')
+#
+#
+# plt.show()
 
-result = graph.find_jacks()
-# Print the result to the console
-print("Developer Classification:")
-for developer, file_coverage in result.items():
-    print(f"{developer}: {file_coverage:.2%} (Jack: {graph.is_jack(result, developer)})")
 
-threshold_value = 0.5  # You can adjust the threshold as needed
-rare_files_result = graph.dev_to_rare_files()
-print("Rarely Reached Files per Developer:")
-for developer, files in rare_files_result.items():
-    print(f"{developer}: {files}")
+all_replacements_result = graph.find_replacements_for_all()
 
-mavens_result = graph.find_mavens(threshold_value)
-print("Mavenness per Developer:")
-for developer, mavenness in mavens_result.items():
-    print(f"{developer}: {mavenness:.2%}")
+
+# # Print the result to the console
+for leaving_dev, replacements in all_replacements_result.items():
+    print(f"Potential Best Replacement for {leaving_dev}:")
+
+    best_replacement, overlapping_knowledge = max(replacements.items(), key=lambda x: x[1])
+    print(f"  {best_replacement}: Overlapping Knowledge - {overlapping_knowledge:.2%}")
+
 graph.close()
 
 

@@ -325,7 +325,7 @@ class DeveloperAnalyzer:
 
         return {developer: len(issues) for developer, issues in closed_issues_per_developer.items()}
 
-    def plot_closed_issues_per_developer(self):
+    def plot_closed_issues_per_developer(self, threshold=5):
         count_closed_issues_by_developer = self.count_closed_issues_by_developer()
 
         if count_closed_issues_by_developer is None:
@@ -335,6 +335,13 @@ class DeveloperAnalyzer:
 
         developers = list(count_closed_issues_by_developer.keys())
         closed_issues_count = list(count_closed_issues_by_developer.values())
+
+        for developer, count in zip(developers, closed_issues_count):
+            print(f"{developer}: Closed Issues Count - {count}")
+
+            # Classify as "solver" if above the threshold
+            if count > threshold:
+                print(f"  {developer} is a solver!")
 
         plt.bar(developers, closed_issues_count, color='purple')
         plt.xlabel('Developers')
