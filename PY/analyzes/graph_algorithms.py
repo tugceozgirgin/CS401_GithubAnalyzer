@@ -2,6 +2,9 @@ from collections import defaultdict
 
 from matplotlib import pyplot as plt
 from neo4j import GraphDatabase
+import seaborn as sns
+import pandas as pd
+import numpy as np
 
 class GraphAlgorithms:
     def __init__(self):
@@ -165,18 +168,346 @@ class GraphAlgorithms:
                             common_elements= common_elements+1
                 overlapping_knowledge = common_elements / len(leaving_dev_files) if len(leaving_dev_files) > 0 else 0
                 dev_to_overlapping_knowledge[dev] = overlapping_knowledge
-                print(dev_to_files)
 
             sorted_dev_to_overlapping_knowledge = self.sort_by_value(dev_to_overlapping_knowledge)
             all_replacements[leaving_dev] = sorted_dev_to_overlapping_knowledge
 
         return all_replacements
 
+    def get_developer_lines_modified(self):
+        developer_lines_modified = defaultdict(int)
+
+        with self._driver.session() as session:
+            result = session.run(
+                "MATCH (d:Developer)-[:DEVELOPED]->(c:Commit)-[r:MODIFIED]->(f:Files) "
+                "RETURN d.developer_id AS developer_id, SUM(r.inserted_lines - r.deleted_lines) AS total_lines_modified"
+            )
+
+            for record in result:
+                developer_id = record['developer_id']
+                total_lines_modified = record['total_lines_modified']
+
+                # Increment lines modified for the developer
+                developer_lines_modified[developer_id] += total_lines_modified
+
+        return dict(developer_lines_modified)
+
+    # def calculate_commits_per_developer(self):
+    #     commits_per_developer = {}
+    #
+    #     with self._driver.session() as session:
+    #         result = session.run(
+    #             "MATCH (d:Developer)-[:DEVELOPED]->(c:Commit) "
+    #             "RETURN d.developer_id AS developer_id, COUNT(c) AS commit_count"
+    #         )
+    #
+    #         for record in result:
+    #             developer_id = record['developer_id']
+    #             commit_count = record['commit_count']
+    #
+    #             commits_per_developer[developer_id] = commit_count
+    #
+    #     return commits_per_developer
+    #
+    # def calculate_files_per_developer(self):
+    #     files_per_developer = {}
+    #
+    #     with self._driver.session() as session:
+    #         result = session.run(
+    #             "MATCH (d:Developer)-[:DEVELOPED]->(c:Commit)-[:MODIFIED]->(f:Files) "
+    #             "RETURN d.developer_id AS developer_id, COUNT(DISTINCT f) AS files_count"
+    #         )
+    #
+    #         for record in result:
+    #             developer_id = record['developer_id']
+    #             files_count = record['files_count']
+    #
+    #             files_per_developer[developer_id] = files_count
+    #
+    #     return files_per_developer
+
+    def list_files_modified_per_developer(self):
+        files_modified_per_developer = defaultdict(int)
+
+        with self._driver.session() as session:
+            result = session.run(
+                "MATCH (d:Developer)-[:DEVELOPED]->(c:Commit)-[:MODIFIED]->(f:Files) "
+                "RETURN c.commit_hash AS commit_hash, "
+                "d.developer_id AS developer_id, COUNT(DISTINCT f) AS modified_file_count"
+            )
+
+            for record in result:
+                commit_hash = record['commit_hash']
+                developer_id = record['developer_id']
+                modified_file_count = record['modified_file_count']
+                files_modified_per_developer[(commit_hash, developer_id)] = modified_file_count
+
+        return dict(files_modified_per_developer)
+
+    def list_lines_modified_per_commit(self):
+        lines_modified_per_commit = defaultdict(int)
+
+        with self._driver.session() as session:
+            result = session.run(
+                "MATCH (d:Developer)-[:DEVELOPED]->(c:Commit)-[r:MODIFIED]->(f:Files) "
+                "RETURN c.commit_hash AS commit_hash, d.developer_id AS developer_id, "
+                "SUM(r.inserted_lines - r.deleted_lines) AS total_lines_modified"
+            )
+
+            for record in result:
+                commit_hash = record['commit_hash']
+                developer_id = record['developer_id']
+                total_lines_modified = record['total_lines_modified']
+
+                # Increment lines modified for the commit and developer
+                lines_modified_per_commit[(commit_hash, developer_id)] += total_lines_modified
+
+        return dict(lines_modified_per_commit)
+
+    # def find_max_lines_modified_per_commit(self):
+    #     max_lines_modified_per_developer = defaultdict(int)
+    #
+    #     with self._driver.session() as session:
+    #         result = session.run(
+    #             "MATCH (d:Developer)-[:DEVELOPED]->(c:Commit)-[r:MODIFIED]->(f:Files) "
+    #             "RETURN d.developer_id AS developer_id, "
+    #             "MAX(r.inserted_lines - r.deleted_lines) AS max_lines_modified"
+    #         )
+    #
+    #         for record in result:
+    #             developer_id = record['developer_id']
+    #             max_lines_modified = record['max_lines_modified']
+    #
+    #             # Update max lines modified for the developer
+    #             max_lines_modified_per_developer[developer_id] = max(max_lines_modified_per_developer[developer_id], max_lines_modified)
+    #
+    #     return dict(max_lines_modified_per_developer)
+    #
+    # def find_min_lines_modified_per_commit(self):
+    #     min_lines_modified_per_developer = defaultdict(int)
+    #
+    #     with self._driver.session() as session:
+    #         result = session.run(
+    #             "MATCH (d:Developer)-[:DEVELOPED]->(c:Commit)-[r:MODIFIED]->(f:Files) "
+    #             "RETURN d.developer_id AS developer_id, "
+    #             "MIN(r.inserted_lines - r.deleted_lines) AS min_lines_modified"
+    #         )
+    #
+    #         for record in result:
+    #             developer_id = record['developer_id']
+    #             min_lines_modified = record['min_lines_modified']
+    #
+    #             # Update min lines modified for the developer
+    #             min_lines_modified_per_developer[developer_id] = min(min_lines_modified_per_developer[developer_id], min_lines_modified)
+    #
+    #     return dict(min_lines_modified_per_developer)
+
+    def plot_lines_modified_boxplot(self):
+        # Call the method to get lines modified per commit
+        lines_modified_per_commit = self.list_lines_modified_per_commit()
+
+        # Organize data into a DataFrame
+        data = {
+            'Developer': [],
+            'Lines Modified': []
+        }
+
+        for (commit_hash, developer_id), lines_modified in lines_modified_per_commit.items():
+            data['Developer'].append(developer_id)
+            data['Lines Modified'].append(lines_modified)
+
+        df = pd.DataFrame(data)
+
+        # Create a box plot using Seaborn
+        plt.figure(figsize=(10, 6))
+
+        sns.boxplot(x='Developer', y='Lines Modified', data=df, color='lightgreen', width=0.2)
+
+        plt.title(' lines modified per commit')
+        plt.show()
+
+    def plot_files_modified_boxplot(self):
+        # Call the method to get modified files per developer
+        files_modified_per_developer = self.list_files_modified_per_developer()
+
+        # Organize data into a DataFrame
+        data = {
+            'Developer': [],
+            'Modified Files': []
+        }
+
+        for (commit_hash, developer_id), modified_files_count in files_modified_per_developer.items():
+            data['Developer'].append(developer_id)
+            data['Modified Files'].append(modified_files_count)
+
+        df = pd.DataFrame(data)
+
+        # Create a box plot using Seaborn
+        plt.figure(figsize=(10, 6))
+
+        sns.boxplot(x='Developer', y='Modified Files', data=df, color='lightblue', width=0.2)
+
+        plt.title(' files modified per commit')
+        plt.show()
+
+    def get_closed_issues_data(self):
+        closed_issues_data = []
+
+        # Replace this with your actual query to retrieve closed issues data
+        query = (
+            "MATCH (i:Issue)-[:CLOSED_BY]->(d:Developer) "
+            "RETURN i.issue_id AS issue_id, i.state AS state, "
+            "i.created_at AS created_at, i.closed_at AS closed_at, "
+            "d.developer_id AS closed_by_id, d.developer_name AS closed_by_name"
+        )
+
+        with self._driver.session() as session:
+            result = session.run(query)
+
+            for record in result:
+                issue_data = {
+                    'id': record['issue_id'],
+                    'state': record['state'],
+                    'created_at': record['created_at'],
+                    'closed_at': record['closed_at'],
+                    'closed_by': {
+                        'developer_id': record['closed_by_id'],
+                        'developer_name': record['closed_by_name']
+                    }
+                }
+                closed_issues_data.append(issue_data)
+
+        return closed_issues_data
+
+    def find_solvers(self, threshold=10):
+        dev_to_closed_issues = self.dev_to_closed_issues()
+
+        solvers = {dev: num_closed_issues for dev, num_closed_issues in dev_to_closed_issues.items() if
+                    num_closed_issues >= threshold}
+        return solvers
+
+    def dev_to_closed_issues(self):
+        dev_to_closed_issues = defaultdict(int)
+
+        closed_issues_data = self.get_closed_issues_data()
+
+        for issue in closed_issues_data:
+            closed_by = issue.get('closed_by', {}).get('developer_name', '')
+            if closed_by:
+                dev_to_closed_issues[closed_by] += 1
+
+        return dict(dev_to_closed_issues)
+
+    def list_lines_modified_per_developer(self):
+        lines_modified_per_developer = defaultdict(int)
+
+        with self._driver.session() as session:
+            result = session.run(
+                "MATCH (d:Developer)-[:DEVELOPED]->(c:Commit)-[r:MODIFIED]->(f:Files) "
+                "RETURN d.developer_id AS developer_id, "
+                "SUM(r.inserted_lines - r.deleted_lines) AS total_lines_modified"
+            )
+
+            for record in result:
+                developer_id = record['developer_id']
+                total_lines_modified = record['total_lines_modified']
+                lines_modified_per_developer[developer_id] += total_lines_modified
+
+        return dict(lines_modified_per_developer)
+
+    def plot_lines_modified_histogram(self):
+        lines_modified_per_developer = self.list_lines_modified_per_developer()
+
+        # Extract lines modified values for each developer
+        lines_modified_values = list(lines_modified_per_developer.values())
+
+        # Calculate average modified lines per developer
+        average_lines_modified = sum(lines_modified_values) / len(lines_modified_values)
+
+        # Use Freedman-Diaconis rule to determine bin width
+        iqr = np.percentile(lines_modified_values,75) - np.percentile(lines_modified_values, 25)
+        bin_width = 2 * iqr / (len(lines_modified_values) ** (1 / 3))
+
+        bin_width /= 2
+
+        # Calculate histogram bins dynamically
+        min_value = min(lines_modified_values)
+        max_value = max(lines_modified_values)
+        bins = np.arange(min_value, max_value + bin_width, bin_width)
+
+        # Create histogram with adjusted column width
+        plt.hist(lines_modified_values, bins=bins, edgecolor='black', alpha=0.7, width=bin_width, align='mid')
+
+        plt.axvline(x=average_lines_modified, color='red', linestyle='--', linewidth=2, label='Average')
+
+        # Set labels and title
+        plt.xlabel('Total Lines Modified')
+        plt.ylabel('Number of Developers')
+        plt.title('Lines Modified Distribution per Developer')
+
+        # Show the plot
+        plt.show()
 
 
 # Graph instance creation and function execution
 graph = GraphAlgorithms()
-# developers = graph.get_developers()
+developers = graph.get_developers()
+
+graph.plot_lines_modified_histogram()
+
+
+# solvers = graph.find_solvers(threshold=5) #### 0.2 olabilir
+#
+# # Print or use the results
+# print("Developers identified as solvers:")
+# for developer, num_closed_issues in solvers.items():
+#     print(f"{developer}: {num_closed_issues} closed issues")
+
+
+
+get_developer_lines_modified = graph.get_developer_lines_modified()
+
+# Print the result to the console
+for developer_id, modified_lines_count in get_developer_lines_modified.items():
+    print(f"Developer {developer_id}: Modified Files - {modified_lines_count}")
+
+
+#
+#
+# graph.plot_lines_modified_boxplot()
+# graph.plot_files_modified_boxplot()
+
+
+# # Extract data for plotting
+# developers = list(commits_per_developer.keys())
+# commit_counts = list(commits_per_developer.values())
+#
+# # Plot the bar graph
+# plt.figure(figsize=(12, 6))
+# plt.bar(developers, commit_counts, color='blue')
+# plt.title('Number of Commits for Each Developer')
+# plt.xlabel('Developers')
+# plt.ylabel('Number of Commits')
+# plt.show()
+#
+
+# developer_lines_modified = graph.get_developer_lines_modified()
+#
+
+#
+# developers = list(developer_lines_modified.keys())
+# lines_modified = list(developer_lines_modified.values())
+#
+# plt.figure(figsize=(12, 6))
+# plt.bar(developers, lines_modified, color='orange')
+# plt.title('Total Lines Modified for Each Developer')
+# plt.xlabel('Developers')
+# plt.ylabel('Total Lines Modified')
+# plt.show()
+
+
+
+
 # print(developers)
 # reachable_files = graph.dev_to_files()
 # print(reachable_files)
@@ -185,12 +516,12 @@ graph = GraphAlgorithms()
 # # Print the result to the console
 # print("Developer Classification:")
 # for developer, file_coverage in result.items():
-#     print(f"{developer}: {file_coverage:.2%} (Jack: {graph.is_jack(result, developer)})")
+#     print(f"{developer}: {file_coverage:.2%} (Expert: {graph.is_jack(result, developer)})")
 #
 # # Extract developers and their corresponding Jack percentages
 # developers = list(result.keys())
 # jack_percentages = [result[developer] for developer in developers]
-#
+
 # # Plotting
 # plt.figure(figsize=(10, 6))
 # plt.bar(developers, jack_percentages, color='blue')
@@ -198,8 +529,8 @@ graph = GraphAlgorithms()
 # plt.xlabel('Developers')
 # plt.ylabel('Jack Percentage')
 # plt.ylim(0, 1)  # Set the y-axis limit to represent percentages (0% to 100%)
-#
-#
+# #
+# #
 # plt.show()
 #
 # threshold_value = 0.5  # You can adjust the threshold as needed
@@ -227,15 +558,16 @@ graph = GraphAlgorithms()
 # plt.show()
 
 
-all_replacements_result = graph.find_replacements_for_all()
+# all_replacements_result = graph.find_replacements_for_all()
+#
+#
+# # # Print the result to the console
+# for leaving_dev, replacements in all_replacements_result.items():
+#     print(f"Similarity for {leaving_dev} with other developers:")
+#
+#     for other_dev, overlapping_knowledge in replacements.items():
+#         print(f"  {other_dev}: Overlapping Knowledge - {overlapping_knowledge:.2%}")
 
-
-# # Print the result to the console
-for leaving_dev, replacements in all_replacements_result.items():
-    print(f"Potential Best Replacement for {leaving_dev}:")
-
-    best_replacement, overlapping_knowledge = max(replacements.items(), key=lambda x: x[1])
-    print(f"  {best_replacement}: Overlapping Knowledge - {overlapping_knowledge:.2%}")
 
 graph.close()
 

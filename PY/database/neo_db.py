@@ -114,18 +114,20 @@ class NEO:
             neo4j_create_statement = (
                     "CREATE (i:Issue {"
                     "issue_id: " + str(issue['id']) + ", "
-                    "title: '" + issue['title'].replace("'", "\\'") + "', "
-                    "description: '" + issue['description'].replace("'", "\\'") + "', "
-                                                               "state: '" + issue['state'] + "', "
-                                                                                             "created_at: '" + issue[
-                        'created_at'] + "', "
-                                        "closed_at: " + (
+                                                      "title: '" + issue['title'].replace("'", "\\'") + "', "
+                                                                                                        "description: '" + (
+                        issue['description'].replace("'", "\\'") if issue['description'] is not None else "") + "', "
+                                                                                                                "state: '" +
+                    issue['state'] + "', "
+                                     "created_at: '" + issue['created_at'] + "', "
+                                                                             "closed_at: " + (
                         f"'{issue['closed_at']}'" if issue['closed_at'] is not None else "null") + ", "
                                                                                                    "closed_by: " + (
                         f"'{issue['closed_by']}'" if issue['closed_by'] is not None else "null") + ", "
                                                                                                    "opened_by: '" +
                     issue['opened_by'] + "'})"
             )
+
             issue_execution_commands.append(neo4j_create_statement)
         execute_nodes(issue_execution_commands)
 

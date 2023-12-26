@@ -23,31 +23,40 @@ class GUI:
         self.root = tk.Tk()
         self.root.title("GitHub Link Input")
 
+        # Create a style for themed widgets
+        self.style = ttk.Style()
+        self.style.configure("TFrame", background="#f0f0f0")  # Set background color
+        self.style.configure("TLabel", background="#f0f0f0")  # Set background color
+        self.style.configure("TButton", background="#4CAF50", foreground="white")  # Set button colors
+
         # Create and configure the widgets
-        self.entry = tk.Entry(self.root, width=50)
-        self.entry.pack(pady=5, padx=10)  # Adding padding to the left and right
+        frame = ttk.Frame(self.root, style="TFrame")
+        frame.pack(pady=10, padx=10)
+
+        ttk.Label(frame, text="GitHub Link:", style="TLabel").grid(row=0, column=0, padx=5, pady=5)
+
+        self.entry = ttk.Entry(frame, width=50)
+        self.entry.grid(row=0, column=1, padx=5, pady=5)
 
         # Checkbox to enable/disable date selections
         self.date_checkbox_var = tk.BooleanVar()
-        self.date_checkbox = ttk.Checkbutton(self.root, text="Enable Date Selection", variable=self.date_checkbox_var,
-                                             command=self.toggle_date_entries)
-        self.date_checkbox.pack(pady=5)
+        self.date_checkbox = ttk.Checkbutton(frame, text="Enable Date Selection", variable=self.date_checkbox_var,
+                                             command=self.toggle_date_entries, style="TCheckbutton")
+        self.date_checkbox.grid(row=1, columnspan=2, pady=5)
 
         # DateEntry widgets for selecting the time range
-        self.date_label1 = tk.Label(self.root, text="Select start date:")
-        self.date_label1.pack(pady=5)
-        self.date_entry1 = DateEntry(self.root, width=12, background='darkblue', foreground='white', borderwidth=2,
+        ttk.Label(frame, text="Select start date:", style="TLabel").grid(row=2, column=0, padx=5, pady=5)
+        self.date_entry1 = DateEntry(frame, width=12, background='darkblue', foreground='white', borderwidth=2,
                                      state="disabled")
-        self.date_entry1.pack(pady=5, padx=(0, 10))  # Adding padding to the right
+        self.date_entry1.grid(row=2, column=1, padx=5, pady=5)
 
-        self.date_label2 = tk.Label(self.root, text="Select end date:")
-        self.date_label2.pack(pady=5)
-        self.date_entry2 = DateEntry(self.root, width=12, background='darkblue', foreground='white', borderwidth=2,
+        ttk.Label(frame, text="Select end date:", style="TLabel").grid(row=3, column=0, padx=5, pady=5)
+        self.date_entry2 = DateEntry(frame, width=12, background='darkblue', foreground='white', borderwidth=2,
                                      state="disabled")
-        self.date_entry2.pack(pady=5)
+        self.date_entry2.grid(row=3, column=1, padx=5, pady=5)
 
-        self.submit_button = tk.Button(self.root, text="Submit", command=self.submit_button_clicked)
-        self.submit_button.pack(pady=10)
+        self.submit_button = ttk.Button(frame, text="Submit", command=self.submit_button_clicked)
+        self.submit_button.grid(row=4, columnspan=2, pady=10)
 
     def run(self):
         # Run the GUI event loop
@@ -115,7 +124,7 @@ class GUI:
             output_file_path = 'commit_data.json'
             dump_json_file(output_file_path, commit_data)
             issues_data = extract_issues(github_link,
-                                         "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")
+                                         "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")
             output_file_path_issues = 'issue_data.json'
             dump_json_file('issue_data.json', issues_data)
 
@@ -147,13 +156,13 @@ class GUI:
         developer_analyzer = DeveloperAnalyzer(loaded_commit_data, loaded_issue_data, github_link)
         developer_analyzer.show_similarity_ratios()
         developer_analyzer.run_analysis()
-        developer_analyzer.plot_commits_per_developer()
-        developer_analyzer.plot_file_counts_per_developer()
-        developer_analyzer.plot_lines_per_developer()
+        #developer_analyzer.plot_commits_per_developer()
+        #developer_analyzer.plot_file_counts_per_developer()
+        #developer_analyzer.plot_lines_per_developer()
         developer_analyzer.plot_all()
-        #developer_analyzer.plot_combined_boxplot()
+        #developer_analyzer.plot_custom_boxplot()
 
-        developer_analyzer.plot_closed_issues_per_developer()
+        #developer_analyzer.plot_closed_issues_per_developer()
 
         #graph_algorithms = GraphAlgorithms("bolt://localhost:7687", "neo4j", "password")
         #graph_algorithms.run()

@@ -2,7 +2,8 @@ import itertools
 from collections import defaultdict, Counter
 import matplotlib.pyplot as plt
 import numpy as np
-
+import seaborn as sns
+import pandas as pd
 
 from PY.api.data import read_from_json
 
@@ -352,4 +353,40 @@ class DeveloperAnalyzer:
 
         plt.show()
 
+    def calculate_boxplot_values(self, developer):
+        lines_inserted = [commit['lines_inserted'] for commit in self.commit_data if commit['author'] == developer]
+        lines_inserted = [item for sublist in lines_inserted for item in sublist]  # Flatten the list
 
+        if not lines_inserted:
+            return None, None, None  # No data for this developer
+
+        min_lines = min(lines_inserted)
+        max_lines = max(lines_inserted)
+        median_lines = np.median(lines_inserted)
+
+        return min_lines, max_lines, median_lines
+
+    def plot_custom_boxplot(self, developers=None):
+        if developers is None:
+            developers = self.developers
+
+        data = []
+
+        for developer in developers:
+            lines_inserted = [commit['lines_inserted'] for commit in self.commit_data if commit['author'] == developer]
+            lines_inserted = [item for sublist in lines_inserted for item in sublist]  # Flatten the list
+
+            if lines_inserted:
+                data.extend([(developer, lines) for lines in lines_inserted])
+
+        df = pd.DataFrame(data, columns=['Developer', 'Lines Inserted'])
+
+        plt.figure(figsize=(12, 6))
+        ax = sns.boxplot(x='Developer', y='Lines Inserted', data=df, color='skyblue', width=0.5)
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+        plt.xlabel('Developers')
+        plt.ylabel('Lines Inserted')
+        plt.title('Custom Box Plot for Lines Inserted per Developer')
+
+        plt.tight_layout()
+        plt.show()
