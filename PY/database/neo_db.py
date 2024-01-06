@@ -114,18 +114,13 @@ class NEO:
             neo4j_create_statement = (
                     "CREATE (i:Issue {"
                     "issue_id: " + str(issue['id']) + ", "
-                                                      "title: '" + issue['title'].replace("'", "\\'") + "', "
-                                                                                                        "description: '" + (
-                        issue['description'].replace("'", "\\'") if issue['description'] is not None else "") + "', "
-                                                                                                                "state: '" +
-                    issue['state'] + "', "
-                                     "created_at: '" + issue['created_at'] + "', "
-                                                                             "closed_at: " + (
-                        f"'{issue['closed_at']}'" if issue['closed_at'] is not None else "null") + ", "
-                                                                                                   "closed_by: " + (
-                        f"'{issue['closed_by']}'" if issue['closed_by'] is not None else "null") + ", "
-                                                                                                   "opened_by: '" +
-                    issue['opened_by'] + "'})"
+                    "title: '" + issue['title'].replace("'", "\\'") + "', "
+                    "description: '" + ( issue['description'].replace("'", "\\'") if issue['description'] is not None else "") + "', "
+                    "state: '" +issue['state'] + "', "
+                    "created_at: '" + issue['created_at'] + "', "
+                    "closed_at: " + (f"'{issue['closed_at']}'" if issue['closed_at'] is not None else "null") + ", "
+                    "closed_by: " + (f"'{issue['closed_by']}'" if issue['closed_by'] is not None else "null") + ", "
+                    "opened_by: '" +issue['opened_by'] + "'})"
             )
 
             issue_execution_commands.append(neo4j_create_statement)
@@ -348,13 +343,3 @@ class NEO:
             for author, files_changed in total_files_changed.items():
                 ratio = (files_changed / total_files) * 100
                 file.write(f"{author}: Files Changed - {files_changed}, Ratio - {ratio:.2f}%\n")
-
-
- # # Create relationships between Developer-Commit
- #        neo4j_create_relation_dev_statement_commit = (
- #            "MATCH (c:Commit), (d:Developer) "
- #            "WHERE c.commit_author = d.developer_name "
- #            "MERGE (c)-[:DEVELOPED_BY]->(d)"
- #        )
- #        commit_execution_commands.append(neo4j_create_relation_dev_statement_commit)
- #        execute_nodes(commit_execution_commands)

@@ -27,6 +27,12 @@ class GraphAlgorithms:
             nodes = [record['n'] for record in result]
             return nodes
 
+    def get_developer_names(self):
+        with self._driver.session() as session:
+                result = session.run("MATCH (d:Developer) RETURN d.developer_name AS developer_name")
+                developer_names = [record["developer_name"] for record in result]
+                return developer_names
+
     def get_developers(self):
         with self._driver.session() as session:
             result = session.run("MATCH (d:Developer) RETURN d.developer_id AS developer_id")
@@ -289,7 +295,8 @@ class GraphAlgorithms:
         plt.title(' lines modified per commit')
         plt.show()
 
-    def plot_lines_modified_boxplot(self,ax):
+
+    def plot_lines_modified_boxplot(self, ax):
         # Call the method to get lines modified per commit
         lines_modified_per_commit = self.list_lines_modified_per_commit()
 
@@ -305,11 +312,20 @@ class GraphAlgorithms:
 
         df = pd.DataFrame(data)
 
+        # Calculate mean and standard deviation
+        mean = df['Lines Modified'].mean()
+        std_dev = df['Lines Modified'].std()
 
+        # Define the cutoff threshold for outliers (e.g., 3 standard deviations)
+        cutoff = 1.5 * std_dev
 
-        sns.boxplot(x='Developer', y='Lines Modified', data=df, color='lightgreen', width=0.2, ax=ax)
+        # Filter out outliers
+        df_filtered = df[np.abs(df['Lines Modified'] - mean) < cutoff]
 
-        ax.set_title(' lines modified per commit')
+        # Create the boxplot with filtered data
+        sns.boxplot(x='Developer', y='Lines Modified', data=df_filtered, color='lightgreen', width=0.2, ax=ax)
+
+        ax.set_title('Lines Modified per Commit (Outliers Removed)')
 
 
     def plot_files_modified_boxplot(self):
@@ -335,7 +351,7 @@ class GraphAlgorithms:
 
         plt.title(' files modified per commit')
         plt.show()
-    def plot_files_modified_boxplot(self,ax):
+    def plot_files_modified_boxplot(self, ax):
         # Call the method to get modified files per developer
         files_modified_per_developer = self.list_files_modified_per_developer()
 
@@ -351,11 +367,20 @@ class GraphAlgorithms:
 
         df = pd.DataFrame(data)
 
-        sns.boxplot(x='Developer', y='Modified Files', data=df, color='lightblue', width=0.2, ax=ax)
+        # Calculate mean and standard deviation
+        mean = df['Modified Files'].mean()
+        std_dev = df['Modified Files'].std()
 
-        ax.set_title(' files modified per commit')
+        # Define the cutoff threshold for outliers (e.g., 3 standard deviations)
+        cutoff = 3 * std_dev
 
+        # Filter out outliers
+        df_filtered = df[np.abs(df['Modified Files'] - mean) < cutoff]
 
+        # Create the boxplot with filtered data
+        sns.boxplot(x='Developer', y='Modified Files', data=df_filtered, color='lightblue', width=0.2, ax=ax)
+
+        ax.set_title('Files Modified per Commit (Outliers Removed)')
     def get_closed_issues_data(self):
         closed_issues_data = []
 
