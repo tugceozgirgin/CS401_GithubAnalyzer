@@ -124,7 +124,7 @@ class GUI:
             output_file_path = 'commit_data.json'
             dump_json_file(output_file_path, commit_data)
             issues_data = extract_issues(github_link,
-                                         "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")
+                                         "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")
             output_file_path_issues = 'issue_data.json'
             dump_json_file('issue_data.json', issues_data)
 
@@ -159,7 +159,7 @@ class GUI:
         #developer_analyzer.plot_commits_per_developer()
         #developer_analyzer.plot_file_counts_per_developer()
         #developer_analyzer.plot_lines_per_developer()
-        developer_analyzer.plot_all()
+        #developer_analyzer.plot_all()
         #developer_analyzer.plot_custom_boxplot()
 
         #developer_analyzer.plot_closed_issues_per_developer()

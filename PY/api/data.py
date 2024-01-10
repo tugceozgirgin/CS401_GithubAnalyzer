@@ -258,4 +258,3 @@ def extract_issues(repo_url, access_token):
 
 def get_first_last_commit_dates(commit_data):
     return commit_data[0]["commit_date"], commit_data[-1]["commit_date"]
-

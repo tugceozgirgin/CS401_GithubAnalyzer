@@ -27,6 +27,11 @@ class GraphAlgorithms:
             nodes = [record['n'] for record in result]
             return nodes
 
+    def get_developer_names2(self, developer_id):
+        with self._driver.session() as session:
+            result = session.run("MATCH (d:Developer {developer_id: $developer_id}) RETURN d.developer_name AS developer_name", {"developer_id": developer_id})
+            developer_names = [record["developer_name"] for record in result]
+            return developer_names
     def get_developer_names(self):
         with self._driver.session() as session:
                 result = session.run("MATCH (d:Developer) RETURN d.developer_name AS developer_name")
@@ -179,6 +184,14 @@ class GraphAlgorithms:
             all_replacements[leaving_dev] = sorted_dev_to_overlapping_knowledge
 
         return all_replacements
+
+    def get_top_similar_developers(self, all_replacements_result, top_n=3):
+        top_n_replacements_result = defaultdict(dict)
+
+        for leaving_dev, replacements in all_replacements_result.items():
+            top_n_replacements_result[leaving_dev] = {k: v for k, v in sorted(replacements.items(), key=lambda item: item[1], reverse=True)[:top_n]}
+
+        return top_n_replacements_result
 
     def get_developer_lines_modified(self):
         developer_lines_modified = defaultdict(int)
@@ -625,6 +638,8 @@ class GraphAlgorithms:
         ax.set_xlabel('Developers')
         ax.set_ylabel('Savantness')
 
+
+
 # Graph instance creation and function execution
 graph = GraphAlgorithms()
 developers = graph.get_developers()
@@ -677,12 +692,12 @@ for developer, mavenness in mavens_result.items():
 all_replacements_result = graph.find_replacements_for_all()
 
 
-# # # Print the result to the console
-# for leaving_dev, replacements in all_replacements_result.items():
-#     print(f"Similarity for {leaving_dev} with other developers:")
-#
-#     for other_dev, overlapping_knowledge in replacements.items():
-#         print(f"  {other_dev}: Overlapping Knowledge - {overlapping_knowledge:.2%}")
+# # Print the result to the console
+for leaving_dev, replacements in all_replacements_result.items():
+    print(f"Similarity for {leaving_dev} with other developers:")
+
+    for other_dev, overlapping_knowledge in replacements.items():
+        print(f"  {other_dev}: Overlapping Knowledge - {overlapping_knowledge:.2%}")
 
 
 # graph.plot_lines_modified_histogram()

@@ -6,6 +6,7 @@ import numpy as np
 from PY.analyzes.graph_algorithms import GraphAlgorithms, developers  # Replace with your graph module or class
 
 graph = GraphAlgorithms()
+
 closedissue_dict = graph.dev_to_closed_issues()
 expertness_dict = graph.find_jacks()
 savantness_dict = graph.find_mavens(0.8)
@@ -21,6 +22,22 @@ df = pd.DataFrame(data)
 df['Closed Issue'] = df['Developer Name'].map(closedissue_dict).fillna(0).astype(int)
 df['Expertness Ratio %'] = (df['Developer Id'].map(expertness_dict).fillna(0).astype(float) * 100).round(2)
 df['Savantness Ratio %'] = (df['Developer Id'].map(savantness_dict).fillna(0).astype(float) * 100).round(2)
+
+all_replacements_result = graph.find_replacements_for_all()
+top_3_replacements_result = graph.get_top_similar_developers(all_replacements_result, top_n=3)
+
+# Convert the result to a DataFrame for better visualization
+replacement_data = []
+
+for leaving_dev, replacements in top_3_replacements_result.items():
+    for other_dev, overlapping_knowledge in replacements.items():
+        replacement_data.append({
+            'Leaving Developer': graph.get_developer_names2(leaving_dev)[0],
+            'Compatible Developer': graph.get_developer_names2(other_dev)[0],
+            'Overlapping Knowledge (%)': overlapping_knowledge * 100
+        })
+
+replacement_df = pd.DataFrame(replacement_data)
 
 
 def determine_expert(row):
@@ -138,6 +155,21 @@ def plot_lines_modified_histogram(self):
     )
     return fig
 
+def plot_files_modified_histogram(self):
+    files_per_developer = graph.calculate_files_per_developer()
+
+    developers = list(files_per_developer.keys())
+    files_count = list(files_per_developer.values())
+
+    # Create a Plotly figure for the bar plot
+    fig = go.Figure(data=[go.Bar(x=developers, y=files_count, marker_color='red')])
+    fig.update_layout(
+        title='Total Files Modified for Each Developer',
+        xaxis=dict(title='Developers'),
+        yaxis=dict(title='Total Files Modified')
+    )
+    return fig
+
 import plotly.graph_objs as go
 
 def plot_lines_modified_histogram2(self):
@@ -187,7 +219,55 @@ def plot_lines_modified_histogram2(self):
     else:
         return None
 
+def plot_all(self):
+        # Commit, file ve line sayılarını bir araya getirip tek bir grafikte gösterme
 
+        # 1. Developer bazında commit sayıları
+    commits_per_developer = graph.calculate_commits_per_developer()
+
+        # 2. Developer bazında modified file sayıları
+    modified_files_per_developer = graph.calculate_files_per_developer()
+
+        # 3. Developer bazında modified line sayıları
+    modified_lines_per_developer = graph.get_developer_lines_modified()
+
+        # Ortalamaları hesapla
+    avg_commits = sum(commits_per_developer.values()) / len(commits_per_developer)
+    avg_files = sum(modified_files_per_developer.values()) / len(modified_files_per_developer)
+    avg_lines = sum(modified_lines_per_developer.values()) / len(modified_lines_per_developer)
+
+        # Ortalamaları eşitleyecek katsayıları belirle
+    coeff_commits = avg_lines / avg_commits
+    coeff_files = avg_lines / avg_files
+        # Eşitleme katsayılarını uygula
+    modified_commits_per_developer_values = [count * coeff_commits for count in commits_per_developer.values()]
+    modified_files_per_developer_values = [count * coeff_files for count in modified_files_per_developer.values()]
+    modified_lines_per_developer_values = list(modified_lines_per_developer.values())
+
+        # 4. Grafikleme
+    developers = list(commits_per_developer.keys())
+
+        # Create a Plotly figure for the bar plot
+    fig = go.Figure()
+
+        # Bar for Modified Commits Counts
+    fig.add_trace(go.Bar(x=developers, y=modified_commits_per_developer_values, marker_color='purple',name='Modified Commits Counts'))
+
+        # Bar for Modified Files Counts
+    fig.add_trace(go.Bar(x=developers, y=modified_files_per_developer_values,  marker_color='red', name='Modified Files Counts'))
+
+        # Bar for Lines Modified
+    fig.add_trace(go.Bar(x=developers, y=modified_lines_per_developer_values, marker_color='orange', name='Lines Modified'))
+
+        # Update layout
+    fig.update_layout(
+        barmode='group',
+        title='Comprehensive Analysis: Commits, Modified Files, and Modified Lines per Developer',
+        xaxis=dict(title='Developers'),
+        yaxis=dict(title='Counts (scaled for balance)')
+    )
+
+    return fig
 
 
 
@@ -219,6 +299,16 @@ app.layout = html.Div([
                 }
             }
         ),
+dash_table.DataTable(
+        id='replacement_table',
+        columns=[
+            {"name": i, "id": i} for i in replacement_df.columns
+        ],
+        data=replacement_df.to_dict('records'),
+        style_cell=dict(textAlign='left'),
+        style_header=dict(backgroundColor="paleturquoise"),
+        style_data=dict(backgroundColor="lavender")
+    ),
         dcc.Graph(
             id='bar_plot_experts',
             figure={
@@ -283,11 +373,21 @@ app.layout = html.Div([
       ),
     dcc.Graph(
         id='lines_modified_histogram',
+        figure=plot_files_modified_histogram(graph)
+    ),
+
+
+    dcc.Graph(
+        id='lines_modified_histogram',
         figure=plot_lines_modified_histogram(graph)
     ),
     dcc.Graph(
+        id='lines_modified_histogram',
+        figure=plot_all(graph)
+    ),
+    dcc.Graph(
         id='lines_modified_histogram2',
-        figure=plot_lines_modified_histogram2(graph)
+        figure=plot_lines_modified_histogram2(graph) #
     ),
     ])
 @app.callback(
