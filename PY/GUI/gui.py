@@ -2,14 +2,12 @@ import json
 import tkinter as tk
 from tkinter import messagebox, ttk
 from tkcalendar import DateEntry
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
-from PY.analyzes.DeveloperAnalyzer import DeveloperAnalyzer
 #from PY.analyzes.graph_algorithms import GraphAlgorithms
-from PY.database.connection import CONNECTION
 from PY.database.neo_db import NEO  # Import the NEO class
 
-from PY.api.data import extract_commit_data_by_time, dump_json_file, extract_author_commit_counts, \
+from PY.api.data import dump_json_file, extract_author_commit_counts, \
     extract_changed_classes, extract_commit_data, extract_issues
 
 # Define excluded extensions for various file types
@@ -153,9 +151,9 @@ class GUI:
         neo_instance.analyze_developers2()
 
         # Instantiate DeveloperAnalyzer after loading commit data
-        developer_analyzer = DeveloperAnalyzer(loaded_commit_data, loaded_issue_data, github_link)
-        developer_analyzer.show_similarity_ratios()
-        developer_analyzer.run_analysis()
+        #developer_analyzer = DeveloperAnalyzer(loaded_commit_data, loaded_issue_data, github_link)
+        #developer_analyzer.show_similarity_ratios()
+        #developer_analyzer.run_analysis()
         #developer_analyzer.plot_commits_per_developer()
         #developer_analyzer.plot_file_counts_per_developer()
         #developer_analyzer.plot_lines_per_developer()
