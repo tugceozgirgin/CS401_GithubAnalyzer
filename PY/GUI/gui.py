@@ -122,7 +122,7 @@ class GUI:
             output_file_path = 'commit_data.json'
             dump_json_file(output_file_path, commit_data)
             issues_data = extract_issues(github_link,
-                                         "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")
+                                         "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")
             output_file_path_issues = 'issue_data.json'
             dump_json_file('issue_data.json', issues_data)
 
@@ -149,25 +149,6 @@ class GUI:
         neo_instance = NEO(github_link)
         neo_instance.run()
         neo_instance.analyze_developers2()
-
-        # Instantiate DeveloperAnalyzer after loading commit data
-        #developer_analyzer = DeveloperAnalyzer(loaded_commit_data, loaded_issue_data, github_link)
-        #developer_analyzer.show_similarity_ratios()
-        #developer_analyzer.run_analysis()
-        #developer_analyzer.plot_commits_per_developer()
-        #developer_analyzer.plot_file_counts_per_developer()
-        #developer_analyzer.plot_lines_per_developer()
-        #developer_analyzer.plot_all()
-        #developer_analyzer.plot_custom_boxplot()
-
-        #developer_analyzer.plot_closed_issues_per_developer()
-
-        #graph_algorithms = GraphAlgorithms("bolt://localhost:7687", "neo4j", "password")
-        #graph_algorithms.run()
-
-
-        # connection_instance = CONNECTION()
-        # connection_instance.run()
 
     def get_github_link(self):
         github_link = self.entry.get()

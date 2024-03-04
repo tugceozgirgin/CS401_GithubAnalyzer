@@ -120,6 +120,7 @@ class NEO:
                     "created_at: '" + issue['created_at'] + "', "
                     "closed_at: " + (f"'{issue['closed_at']}'" if issue['closed_at'] is not None else "null") + ", "
                     "closed_by: " + (f"'{issue['closed_by']}'" if issue['closed_by'] is not None else "null") + ", "
+                    #"opened_by: " + (f"'{issue['opened_by']}'" if issue['opened_by'] is not None else "null") + "'})"
                     "opened_by: '" +issue['opened_by'] + "'})"
             )
 
@@ -171,7 +172,6 @@ class NEO:
         commit_execution_commands.append(bidirectional_dev_commit_relation)
 
         execute_nodes(commit_execution_commands)
-
 
         # Create relationships between Commit-File based on modified_files
         commit_file_relation_commands = []

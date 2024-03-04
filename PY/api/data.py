@@ -5,8 +5,6 @@ from github import Github
 from pydriller import Repository
 
 
-from datetime import datetime, timedelta, timezone
-
 excluded_extensions = {
     'compiled': ['.class', '.pyc', '.jar', '.iml', '.name', '.gitignore'],
     'system': ['.dll', '.exe', '.so']
@@ -34,30 +32,6 @@ def get_all_files(commit_data):
                 files.add(modified_file)
 
     return list(files)
-
-
-def get_all_developers(commit_data):
-    developers = set()
-    for commit in commit_data:
-        developers.add(commit['author'])
-    return list(developers)
-
-
-def extract_commit_data_by_time(github_link, dt1, dt2):
-    commit_data = []
-    for commit in Repository(github_link, since=dt1, to=dt2).traverse_commits():
-        commit_date = commit.committer_date
-        formatted_date = commit_date.strftime('%Y-%m-%d %H:%M:%S')
-        commit_info = {
-            'hash': commit.hash,
-            'message': commit.msg,
-            'author': commit.author.name,
-            'commit_date': formatted_date,
-            'modified_files': [file.filename for file in commit.modified_files]
-        }
-        commit_data.append(commit_info)
-    return commit_data
-
 
 def extract_author_commit_counts(loaded_commit_data):
     author_commit_counts = {}
@@ -113,20 +87,10 @@ def get_developers_from_json(json_file_path='commit_data.json'):
         developers.add(commit['author'])
     return list(developers)
 
-
-import json
-
-
 def read_from_json(json_file_path):
     with open(json_file_path, 'r') as infile:
         data = json.load(infile)
     return data
-
-def get_all_extensions():
-    extensions = []
-    for ext_type, ext_list in excluded_extensions.items():
-        extensions.extend(ext_list)
-    return extensions
 
 
 def calculate_file_change_coverage(loaded_commit_data):
@@ -148,36 +112,6 @@ def calculate_file_change_coverage_ratio(file_counts, all_files):
     return coverage_ratios
 
 
-def extract_commit_data2(github_link, dt1, dt2):
-    commit_data = []
-    for commit in Repository(github_link, since=dt1, to=dt2).traverse_commits():
-        commit_date = commit.committer_date
-        formatted_date = commit_date.strftime('%Y-%m-%d %H:%M:%S')
-        commit_info = {
-            'hash': commit.hash,
-            'message': commit.msg,
-            'author': commit.author.name,
-            'commit_date': formatted_date,
-            'modified_files': {}
-        }
-        files_info = {}
-        for modified_file in commit.modified_files:
-            lines_inserted = 0
-            lines_deleted = 0
-            for diff in modified_file.diff_parsed['added']:
-                lines_inserted += 1
-            for diff in modified_file.diff_parsed['deleted']:
-                lines_deleted += 1
-
-            files_info[modified_file.filename] = {
-                'lines_inserted': lines_inserted,
-                'lines_deleted': lines_deleted
-            }
-
-        commit_info['modified_files'] = files_info
-        commit_data.append(commit_info)
-    return commit_data
-
 
 def extract_commit_data(github_link, dt1, dt2):
     commit_data = []
@@ -188,6 +122,7 @@ def extract_commit_data(github_link, dt1, dt2):
             'hash': commit.hash,
             'message': commit.msg,
             'author': commit.author.name,
+            'author_mail': commit.author.email,
             'commit_date': formatted_date,
             'modified_files': [],
             'lines_inserted': [],
@@ -214,8 +149,6 @@ def extract_commit_data(github_link, dt1, dt2):
 
         commit_data.append(commit_info)
     return commit_data
-from github import Github
-
 
 def extract_issues(repo_url, access_token):
     try:
@@ -230,11 +163,17 @@ def extract_issues(repo_url, access_token):
         issues_data = []
         for issue in repo.get_issues(state='all'):
             issue_comments = issue.get_comments()
-            comments_list = list(issue_comments)
-            if len(comments_list) > 0:
-                opened_by = comments_list[0].user.login
+
+            opened_by = issue.user.name if issue.user.name else issue.user.login
+            # opened_by_email = None
+            # if issue.user:
+            #     user = g.get_user(issue.user.login)
+            #     opened_by_email = user.email
+
+            if issue.closed_by:
+                closed_by = issue.closed_by.name if issue.closed_by.name else issue.closed_by.login
             else:
-                opened_by = issue.user.login if issue.user else None
+                closed_by = None
 
             issue_data = {
                 'id': issue.number,
@@ -243,8 +182,9 @@ def extract_issues(repo_url, access_token):
                 'state': issue.state,
                 'created_at': issue.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                 'closed_at': issue.closed_at.strftime('%Y-%m-%d %H:%M:%S') if issue.closed_at else None,
-                'closed_by': issue.closed_by.login if issue.closed_by else None,
+                'closed_by': closed_by,
                 'opened_by': opened_by,
+                #'opener_mail': opened_by_email,
                 'comments': [{'author': comment.user.login,
                               'comment_date': comment.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                               'comment_text': comment.body} for comment in issue_comments]
@@ -258,3 +198,4 @@ def extract_issues(repo_url, access_token):
 
 def get_first_last_commit_dates(commit_data):
     return commit_data[0]["commit_date"], commit_data[-1]["commit_date"]
+

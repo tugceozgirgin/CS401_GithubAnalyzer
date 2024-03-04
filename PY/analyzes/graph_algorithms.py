@@ -20,13 +20,6 @@ class GraphAlgorithms:
         with self._driver.session() as session:
             session.run(query)
 
-    def get_all_nodes(self):
-        query = "MATCH (n) RETURN n"
-        with self._driver.session() as session:
-            result = session.run(query)
-            nodes = [record['n'] for record in result]
-            return nodes
-
     def get_developer_names2(self, developer_id):
         with self._driver.session() as session:
             result = session.run("MATCH (d:Developer {developer_id: $developer_id}) RETURN d.developer_name AS developer_name", {"developer_id": developer_id})
@@ -284,116 +277,6 @@ class GraphAlgorithms:
         return dict(lines_modified_per_commit)
 
 
-    def plot_lines_modified_boxplot(self):
-        # Call the method to get lines modified per commit
-        lines_modified_per_commit = self.list_lines_modified_per_commit()
-
-        # Organize data into a DataFrame
-        data = {
-            'Developer': [],
-            'Lines Modified': []
-        }
-
-        for (commit_hash, developer_id), lines_modified in lines_modified_per_commit.items():
-            data['Developer'].append(developer_id)
-            data['Lines Modified'].append(lines_modified)
-
-        df = pd.DataFrame(data)
-
-        # Create a box plot using Seaborn
-        plt.figure(figsize=(10, 6))
-
-        sns.boxplot(x='Developer', y='Lines Modified', data=df, color='lightgreen', width=0.2)
-
-        plt.title(' lines modified per commit')
-        plt.show()
-
-
-    def plot_lines_modified_boxplot(self, ax):
-        # Call the method to get lines modified per commit
-        lines_modified_per_commit = self.list_lines_modified_per_commit()
-
-        # Organize data into a DataFrame
-        data = {
-            'Developer': [],
-            'Lines Modified': []
-        }
-
-        for (commit_hash, developer_id), lines_modified in lines_modified_per_commit.items():
-            data['Developer'].append(developer_id)
-            data['Lines Modified'].append(lines_modified)
-
-        df = pd.DataFrame(data)
-
-        # Calculate mean and standard deviation
-        mean = df['Lines Modified'].mean()
-        std_dev = df['Lines Modified'].std()
-
-        # Define the cutoff threshold for outliers (e.g., 3 standard deviations)
-        cutoff = 1.5 * std_dev
-
-        # Filter out outliers
-        df_filtered = df[np.abs(df['Lines Modified'] - mean) < cutoff]
-
-        # Create the boxplot with filtered data
-        sns.boxplot(x='Developer', y='Lines Modified', data=df_filtered, color='lightgreen', width=0.2, ax=ax)
-
-        ax.set_title('Lines Modified per Commit (Outliers Removed)')
-
-
-    def plot_files_modified_boxplot(self):
-        # Call the method to get modified files per developer
-        files_modified_per_developer = self.list_files_modified_per_developer()
-
-        # Organize data into a DataFrame
-        data = {
-            'Developer': [],
-            'Modified Files': []
-        }
-
-        for (commit_hash, developer_id), modified_files_count in files_modified_per_developer.items():
-            data['Developer'].append(developer_id)
-            data['Modified Files'].append(modified_files_count)
-
-        df = pd.DataFrame(data)
-
-        # Create a box plot using Seaborn
-        plt.figure(figsize=(10, 6))
-
-        sns.boxplot(x='Developer', y='Modified Files', data=df, color='lightblue', width=0.2)
-
-        plt.title(' files modified per commit')
-        plt.show()
-    def plot_files_modified_boxplot(self, ax):
-        # Call the method to get modified files per developer
-        files_modified_per_developer = self.list_files_modified_per_developer()
-
-        # Organize data into a DataFrame
-        data = {
-            'Developer': [],
-            'Modified Files': []
-        }
-
-        for (commit_hash, developer_id), modified_files_count in files_modified_per_developer.items():
-            data['Developer'].append(developer_id)
-            data['Modified Files'].append(modified_files_count)
-
-        df = pd.DataFrame(data)
-
-        # Calculate mean and standard deviation
-        mean = df['Modified Files'].mean()
-        std_dev = df['Modified Files'].std()
-
-        # Define the cutoff threshold for outliers (e.g., 3 standard deviations)
-        cutoff = 3 * std_dev
-
-        # Filter out outliers
-        df_filtered = df[np.abs(df['Modified Files'] - mean) < cutoff]
-
-        # Create the boxplot with filtered data
-        sns.boxplot(x='Developer', y='Modified Files', data=df_filtered, color='lightblue', width=0.2, ax=ax)
-
-        ax.set_title('Files Modified per Commit (Outliers Removed)')
     def get_closed_issues_data(self):
         closed_issues_data = []
 
@@ -459,191 +342,10 @@ class GraphAlgorithms:
 
         return dict(lines_modified_per_developer)
 
-    def plot_lines_modified_histogram(self):
-        lines_modified_per_developer = self.list_lines_modified_per_developer()
-
-        # Extract lines modified values for each developer
-        lines_modified_values = list(lines_modified_per_developer.values())
-
-        # Calculate average modified lines per developer
-        if len(lines_modified_values) > 0:
-            average_lines_modified = sum(lines_modified_values) / len(lines_modified_values)
-            iqr = np.percentile(lines_modified_values, 75) - np.percentile(lines_modified_values, 25)
-            bin_width = 2 * iqr / (len(lines_modified_values) ** (1 / 3))
-
-            bin_width /= 4
-
-            # Calculate histogram bins dynamically
-            min_value = min(lines_modified_values)
-            max_value = max(lines_modified_values)
-            bins = np.arange(min_value, max_value + bin_width, bin_width)
-
-            # Create histogram with adjusted column width
-            plt.hist(lines_modified_values, bins=bins, edgecolor='black', alpha=0.7, width=bin_width, align='mid')
-
-            plt.axvline(x=average_lines_modified, color='red', linestyle='--', linewidth=2, label='Average')
-
-            # Set labels and title
-            plt.xlabel('Total Lines Modified')
-            plt.ylabel('Number of Developers')
-            plt.title('Lines Modified Distribution per Developer')
-
-            # Show the plot
-            plt.show()
-
-        else:
-            iqr = 0
-            bin_width = 0
-            average_lines_modified = 0
-
-    def plot_lines_modified_histogram2(self,ax):
-        lines_modified_per_developer = self.list_lines_modified_per_developer()
-
-        # Extract lines modified values for each developer
-        lines_modified_values = list(lines_modified_per_developer.values())
-
-        # Calculate average modified lines per developer
-        if len(lines_modified_values) > 0:
-            average_lines_modified = sum(lines_modified_values) / len(lines_modified_values)
-            iqr = np.percentile(lines_modified_values, 75) - np.percentile(lines_modified_values, 25)
-            bin_width = 2 * iqr / (len(lines_modified_values) ** (1 / 3))
-
-            bin_width /= 4
-
-            # Calculate histogram bins dynamically
-            min_value = min(lines_modified_values)
-            max_value = max(lines_modified_values)
-            bins = np.arange(min_value, max_value + bin_width, bin_width)
-
-            # Create histogram with adjusted column width
-            ax.hist(lines_modified_values, bins=bins, edgecolor='black', alpha=0.7, width=bin_width, align='mid')
-
-            ax.axvline(x=average_lines_modified, color='red', linestyle='--', linewidth=2, label='Average')
-
-            # Set labels and title
-            ax.set_xlabel('Total Lines Modified')
-            ax.set_ylabel('Number of Developers')
-            ax.set_title('Lines Modified Distribution per Developer')
-
-
-
-        else:
-            iqr = 0
-            bin_width = 0
-            average_lines_modified = 0
-
-
-    def plot_commits_per_developer_histogram(self): # # Extract data for plotting
-        # Extract data for plotting
-        calculate_commits_per_developer = graph.calculate_commits_per_developer()
-
-        developers = list(calculate_commits_per_developer.keys())
-        commit_counts = list(calculate_commits_per_developer.values())
-
-        # Plot the bar graph
-        plt.figure(figsize=(12, 6))
-        plt.bar(developers, commit_counts, color='blue')
-        plt.title('Number of Commits for Each Developer')
-        plt.xlabel('Developers')
-        plt.ylabel('Number of Commits')
-        plt.show()
-
-    def plot_commits_per_developer_histogram(self, ax): # # Extract data for plotting
-        # Extract data for plotting
-        calculate_commits_per_developer = graph.calculate_commits_per_developer()
-
-        developers = list(calculate_commits_per_developer.keys())
-        commit_counts = list(calculate_commits_per_developer.values())
-
-        # Plot the bar graph
-        ax.bar(developers, commit_counts, color='blue')
-        ax.set_title('Number of Commits for Each Developer')
-        ax.set_xlabel('Developers')
-        ax.set_ylabel('Number of Commits')
-
-    def plot_lines_modified_histogram(self):
-        developer_lines_modified = graph.get_developer_lines_modified()
-
-        developers = list(developer_lines_modified.keys())
-        lines_modified = list(developer_lines_modified.values())
-
-        plt.figure(figsize=(12, 6))
-        plt.bar(developers, lines_modified, color='orange')
-        plt.title('Total Lines Modified for Each Developer')
-        plt.xlabel('Developers')
-        plt.ylabel('Total Lines Modified')
-        plt.show()
-
-    def plot_lines_modified_histogram(self,ax):
-        developer_lines_modified = graph.get_developer_lines_modified()
-
-        developers = list(developer_lines_modified.keys())
-        lines_modified = list(developer_lines_modified.values())
-
-        ax.bar(developers, lines_modified, color='orange')
-        ax.set_title('Total Lines Modified for Each Developer')
-        ax.set_xlabel('Developers')
-        ax.set_ylabel('Total Lines Modified')
-
-    def plot_experts(self):
-        # Extract developers and their corresponding Expert percentages
-        result = graph.find_jacks()
-        developers = list(result.keys())
-        jack_percentages = [result[developer] for developer in developers]
-
-        # Plotting
-        plt.figure(figsize=(10, 6))
-        plt.bar(developers, jack_percentages, color='blue')
-        plt.title('Expert Percentage for Each Developer')
-        plt.xlabel('Developers')
-        plt.ylabel('Expert Percentage')
-        plt.ylim(0, 1)  # Set the y-axis limit to represent percentages (0% to 100%)
-        plt.axhline(y=0.2, color='red', linestyle='--', linewidth=2, label='Threshold')
-
-        plt.show()
-
-    def plot_experts(self, ax):
-        # Extract developers and their corresponding Expert percentages
-        result = graph.find_jacks()
-        developers = list(result.keys())
-        jack_percentages = [result[developer] for developer in developers]
-
-        ax.bar(developers, jack_percentages, color='blue')
-        ax.set_title('Expert Percentage for Each Developer')
-        ax.set_xlabel('Developers')
-        ax.set_ylabel('Expert Percentage')
-        ax.set_ylim(0, 1)  # Set the y-axis limit to represent percentages (0% to 100%)
-        ax.axhline(y=0.2, color='red', linestyle='--', linewidth=2, label='Threshold')
-
-    def plot_savant(self):
-        developers_mavenness = list(mavens_result.keys())
-        mavenness_values = [mavens_result[developer] for developer in developers_mavenness]
-
-        # Plotting Mavenness
-        plt.figure(figsize=(10, 6))
-        plt.bar(developers_mavenness, mavenness_values, color='orange')
-        plt.title('Savantness per Developer')
-        plt.xlabel('Developers')
-        plt.ylabel('Savantness')
-
-        plt.show()
-
-    def plot_savant(self, ax):
-        developers_mavenness = list(mavens_result.keys())
-        mavenness_values = [mavens_result[developer] for developer in developers_mavenness]
-
-        # Use the provided Axes instance (ax) for plotting on the Matplotlib subplot
-        ax.bar(developers_mavenness, mavenness_values, color='orange')
-        ax.set_title('Savantness per Developer')
-        ax.set_xlabel('Developers')
-        ax.set_ylabel('Savantness')
-
-
 
 # Graph instance creation and function execution
 graph = GraphAlgorithms()
 developers = graph.get_developers()
-
 
 
 solvers = graph.find_solvers(threshold=5) #### 0.2 olabilir
@@ -656,11 +358,6 @@ for developer, num_closed_issues in solvers.items():
 
 
 get_developer_lines_modified = graph.get_developer_lines_modified()
-
-# Print the result to the console
-# for developer_id, modified_lines_count in get_developer_lines_modified.items():
-#     print(f"Developer {developer_id}: Modified Files - {modified_lines_count}")
-
 
 
 print(developers)
@@ -677,9 +374,7 @@ for developer, file_coverage in result.items():
 
 threshold_value = 0.5  # You can adjust the threshold as needed
 rare_files_result = graph.dev_to_rare_files()
-# print("Rarely Reached Files per Developer:")
-# for developer, files in rare_files_result.items():
-#     print(f"{developer}: {files}")
+
 
 mavens_result = graph.find_mavens(threshold_value)
 print("Savantness per Developer:")
@@ -698,16 +393,6 @@ for leaving_dev, replacements in all_replacements_result.items():
 
     for other_dev, overlapping_knowledge in replacements.items():
         print(f"  {other_dev}: Overlapping Knowledge - {overlapping_knowledge:.2%}")
-
-
-# graph.plot_lines_modified_histogram()
-# graph.plot_lines_modified_histogram2()
-# graph.plot_lines_modified_boxplot()
-# graph.plot_files_modified_boxplot()
-# graph.plot_commits_per_developer_histogram()
-# graph.plot_experts()
-# graph.plot_savant()
-
 
 graph.close()
 
