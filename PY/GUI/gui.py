@@ -148,7 +148,6 @@ class GUI:
         # Run the NEO class with the provided GitHub link
         neo_instance = NEO(github_link)
         neo_instance.run()
-        neo_instance.analyze_developers2()
 
     def get_github_link(self):
         github_link = self.entry.get()
