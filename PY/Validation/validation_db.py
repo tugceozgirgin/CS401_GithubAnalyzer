@@ -34,29 +34,201 @@ df_change_set = pd.read_json("../change_set.json")
 df_change_set.columns = ['commit_hash', 'committed_date', 'committed_date_zoned', 'message', 'author', 'author_email', 'is_merged']
 df_code_change = pd.read_csv("../code_change.csv")
 df_code_change.columns = ['commit_hash', 'file_path', 'old_file_path', 'change_type', 'is_deleted', 'sum_added_lines', 'sum_removed_lines']
-print(len(df_code_change))
-print(len(df_change_set))
+
+# print(len(df_change_set))
+# print(len(df_code_change))
+
+# Filter .java extennsions
+java_changes = df_code_change[df_code_change['file_path'].str.endswith('.java')]
+
+merged_df = pd.merge(java_changes, df_change_set, on='commit_hash', how='inner')
+
+change_counts = merged_df.groupby('commit_hash').size()
+valid_commits = change_counts.index[change_counts > 0]
+final_df = merged_df[merged_df['commit_hash'].isin(valid_commits)]
+pd.set_option('display.max_columns', None)  # Show all columns
+pd.set_option('display.max_rows', 150)
+pd.set_option('display.width', None)
+print(len(final_df))
+
+# remove duplicate commits with different commit hash
+final_df.drop_duplicates(subset=['committed_date', 'committed_date_zoned', 'message', 'author', 'author_email', 'is_merged', 'file_path', 'old_file_path', 'change_type', 'is_deleted', 'sum_added_lines', 'sum_removed_lines'], inplace=True)
+print(len(final_df))
+
+# Filter out rows where is_merged column is equal to 1
+final_df = final_df[final_df['is_merged'] != 1]
+print(len(final_df))
+
+# Count the number of unique authors
+unique_authors_count = final_df['author'].nunique()
+print("Number of unique authors:", unique_authors_count)
+
+# Group by author email and collect unique author names for each email
+author_groups = final_df.groupby('author_email')['author'].unique()
+
+# Create a dictionary to store email to standardized author name mappings
+lookup_table = {}
+
+# Iterate through author groups to identify different names for the same email
+for email, names in author_groups.items():
+    # Check if there are different names for the same email
+    if len(names) > 1:
+        # Choose a standardized name (you can choose the first one for simplicity)
+        standard_name = names[0]
+        # Update the lookup table with email to standardized name mappings
+        for name in names:
+            lookup_table[name] = standard_name
+
+# Use the lookup table to correct author names in the DataFrame
+final_df['author'] = final_df['author'].map(lookup_table).fillna(final_df['author'])
+print(len(final_df))
+unique_authors_count = final_df['author'].nunique()
+print("Number of unique authors:", unique_authors_count)
+unique_commits_count = final_df['commit_hash'].nunique()
+print("Number of unique commits:", unique_commits_count)
 
 
-# remove duplicate row with different commit hash
-df_change_set = df_change_set.drop_duplicates(subset=df_change_set.columns.difference(['commit_hash']))
-print()
-print(len(df_code_change))
-print(len(df_change_set))
+#Filter out rows where change_type column is equal to "DELETE"
+final_df = final_df[final_df['change_type'] != 'DELETE']
+print(len(final_df))
+unique_authors_count = final_df['author'].nunique()
+print("Number of unique authors:", unique_authors_count)
+unique_commits_count = final_df['commit_hash'].nunique()
+print("Number of unique commits:", unique_commits_count)
 
-# keep only files with .java extension
-df_code_change['file_name'] = df_code_change['file_path'].apply(get_file_name)
-df_code_change = df_code_change[df_code_change['file_name'].isnull()]
-df_code_change.drop(columns=['file_name'], inplace=True)
-print()
-print(len(df_code_change))
-print(len(df_change_set))
+#Developer Nodes
+unique_developers = final_df['author'].unique()
+developer_data = {
+    "id": range(1, len(unique_developers) + 1),
+    "name": unique_developers
+}
+developer_list = pd.DataFrame(developer_data)
+developer_execution_commands = []
 
-#ignore is_merged=1 rows
-df_change_set = df_change_set[df_change_set['is_merged'] != 1]
-print()
-print(len(df_code_change))
-print(len(df_change_set))
+for index, row in developer_list.iterrows():
+    standardized_name = standardize_name(row['name'])  # Assuming standardize_name function is defined
+    neo4j_create_statement = (
+        f"CREATE (d:Developer {{developer_id: {row['id']}, developer_name: '{standardized_name}'}})"
+    )
+    developer_execution_commands.append(neo4j_create_statement)
+execute_nodes(developer_execution_commands)
+
+#File Nodes
+file_names = final_df['file_path'].apply(get_file_name).unique()
+print(len(file_names))
+file_id = [i for i in range(1, len(file_names) + 1)]
+file_data = {
+    "id": file_id,
+    "name": file_names
+}
+file_list = pd.DataFrame(file_data).values.tolist()
+file_execution_commands = []
+for i in file_list:
+    neo4j_create_statement = "CREATE (f:Files {file_id:" + str(i[0]) + ", file_name:  '" + str(i[1]) + "'})"
+    file_execution_commands.append(neo4j_create_statement)
+execute_nodes(file_execution_commands)
+
+# Create Commit Nodes' Cypher code and connect with Neo4j
+
+# commit_execution_commands = []
+#
+# # Iterate over unique commit hashes
+# for commit_hash in final_df['commit_hash'].unique():
+#     commit_data = final_df[final_df['commit_hash'] == commit_hash]
+#
+#     # Aggregate commit attributes
+#     standardized_author = standardize_name(commit_data.iloc[0]['author'])  # Assuming standardize_name function is defined
+#     commit_date = commit_data.iloc[0]['committed_date']
+#     modified_files = commit_data['file_path'].nunique()
+#     lines_inserted = commit_data['sum_added_lines'].sum()
+#     lines_deleted = commit_data['sum_removed_lines'].sum()
+#
+#     # Create a list of modified file names
+#     modified_file_names = []
+#     for file_path in commit_data['file_path']:
+#         file_name = get_file_name(file_path)
+#         if file_name:
+#             modified_file_names.append(file_name)
+
+    # Remove duplicate file names
+# modified_file_names = list(set(modified_file_names))
+
+#     # Create Cypher statement for creating Commit Node
+#     neo4j_create_statement = (
+#         f"CREATE (c:Commit {{"
+#         f"commit_hash: '{commit_hash}', "
+#         f"standardized_author: '{standardized_author}', "
+#         f"commit_date: '{commit_date}', "
+#         f"modified_files: {modified_files}, "
+#         f"lines_inserted: {lines_inserted}, "
+#         f"lines_deleted: {lines_deleted}, "
+#         f"modified_file_names: {modified_file_names}"
+#         f"}})"
+#     )
+#     commit_execution_commands.append(neo4j_create_statement)
+#
+#
+# execute_nodes(commit_execution_commands)
+#
+# relationship_commands1 = []
+#
+# # Iterate through the DataFrame
+# for index, row in final_df.iterrows():
+#     commit_hash = row['commit_hash']
+#     author = standardize_name(row['author'])  # Assuming standardize_name function is defined
+#
+#     # Create relationship between Commit-Developer
+#     commit_developer_relationship = (
+#         f"MATCH (c:Commit {{commit_hash: '{commit_hash}'}}), "
+#         f"(d:Developer {{developer_name: '{author}'}}) "
+#         "CREATE (c)-[:AUTHORED_BY]->(d)"
+#     )
+#     relationship_commands1.append(commit_developer_relationship)
+#
+#     # Create relationship between Developer-Commit
+#     developer_commit_relationship = (
+#         f"MATCH (c:Commit {{commit_hash: '{commit_hash}'}}), "
+#         f"(d:Developer {{developer_name: '{author}'}}) "
+#         "CREATE (d)-[:AUTHOR_OF]->(c)"
+#     )
+#     relationship_commands1.append(developer_commit_relationship)
+#
+# execute_nodes(relationship_commands1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# # keep only files with .java extension
+# df_code_change['file_name'] = df_code_change['file_path'].apply(get_file_name)
+# df_code_change = df_code_change[df_code_change['file_name'].isnull()]
+# df_code_change.drop(columns=['file_name'], inplace=True)
+# print()
+# print(len(df_code_change))
+# print(len(df_change_set))
+#
+# # remove duplicate row with different commit hash
+# df_change_set = df_change_set.drop_duplicates(subset=df_change_set.columns.difference(['commit_hash']))
+# print()
+# print(len(df_code_change))
+# print(len(df_change_set))
+#
+#
+#
+# #ignore is_merged=1 rows
+# df_change_set = df_change_set[df_change_set['is_merged'] != 1]
+# print()
+# print(len(df_code_change))
+# print(len(df_change_set))
 
 
 # Developer Nodes
