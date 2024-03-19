@@ -1,0 +1,220 @@
+[
+    {
+        "hash": "51d3e2410adfa56e8ecb30440453cc089413f0e4",
+        "message": "Initialize project using Create React App",
+        "author": "elifozmen",
+        "author_mail": "80031128+elifozmen@users.noreply.github.com",
+        "commit_date": "2024-02-20 11:09:07",
+        "modified_files": [
+            "README.md",
+            "package-lock.json",
+            "package.json",
+            "favicon.ico",
+            "index.html",
+            "logo192.png",
+            "logo512.png",
+            "manifest.json",
+            "robots.txt",
+            "App.css",
+            "App.js",
+            "App.test.js",
+            "index.css",
+            "index.js",
+            "logo.svg",
+            "reportWebVitals.js",
+            "setupTests.js"
+        ],
+        "lines_inserted": [
+            70,
+            18293,
+            38,
+            0,
+            43,
+            0,
+            0,
+            25,
+            3,
+            38,
+            25,
+            8,
+            13,
+            17,
+            1,
+            13,
+            5
+        ],
+        "lines_deleted": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    {
+        "hash": "555d5090f9236f16020afa63208124cb011dd295",
+        "message": "init",
+        "author": "elifozmen",
+        "author_mail": "80031128+elifozmen@users.noreply.github.com",
+        "commit_date": "2024-02-20 13:00:56",
+        "modified_files": [
+            "index.js"
+        ],
+        "lines_inserted": [
+            2
+        ],
+        "lines_deleted": [
+            3
+        ]
+    },
+    {
+        "hash": "a3a5d6b5878739bbde9382bfae6e552b981df9b6",
+        "message": "Navigation bar",
+        "author": "elifozmen",
+        "author_mail": "80031128+elifozmen@users.noreply.github.com",
+        "commit_date": "2024-02-22 14:49:35",
+        "modified_files": [
+            "App.css",
+            "App.js",
+            "Navbar.js",
+            "index.js",
+            "logo.png",
+            "logo.svg",
+            "styles.css"
+        ],
+        "lines_inserted": [
+            3,
+            7,
+            33,
+            2,
+            0,
+            0,
+            53
+        ],
+        "lines_deleted": [
+            0,
+            17,
+            0,
+            1,
+            0,
+            1,
+            0
+        ]
+    },
+    {
+        "hash": "49d37d2fe19b65a63726d7c72622b5c56e6327a6",
+        "message": "Page files",
+        "author": "elifozmen",
+        "author_mail": "80031128+elifozmen@users.noreply.github.com",
+        "commit_date": "2024-02-22 16:44:14",
+        "modified_files": [
+            "App.css",
+            "categories.js",
+            "compatibility.js",
+            "info.js",
+            "workload.js",
+            "styles.css"
+        ],
+        "lines_inserted": [
+            0,
+            14,
+            14,
+            14,
+            14,
+            2
+        ],
+        "lines_deleted": [
+            3,
+            0,
+            0,
+            0,
+            0,
+            2
+        ]
+    },
+    {
+        "hash": "5fa2af36a8863e4bed14ebf4b5abeae2da8dcfbb",
+        "message": "Image Issue Fixed by Ece",
+        "author": "elifozmen",
+        "author_mail": "80031128+elifozmen@users.noreply.github.com",
+        "commit_date": "2024-02-22 17:22:24",
+        "modified_files": [
+            "App.js",
+            "Navbar.js",
+            "github_icon.png",
+            "styles.css"
+        ],
+        "lines_inserted": [
+            24,
+            4,
+            0,
+            16
+        ],
+        "lines_deleted": [
+            2,
+            2,
+            0,
+            1
+        ]
+    },
+    {
+        "hash": "cfe36663e24d2a985c231d6a975c62eb5e766567",
+        "message": "Home Page",
+        "author": "elifozmen",
+        "author_mail": "80031128+elifozmen@users.noreply.github.com",
+        "commit_date": "2024-02-22 18:27:43",
+        "modified_files": [
+            "App.js"
+        ],
+        "lines_inserted": [
+            18
+        ],
+        "lines_deleted": [
+            6
+        ]
+    },
+    {
+        "hash": "53e63b2cffc21efcc218cb25bb6cdaf0b0c9cb9b",
+        "message": "Input text box",
+        "author": "elifozmen",
+        "author_mail": "80031128+elifozmen@users.noreply.github.com",
+        "commit_date": "2024-02-22 18:40:42",
+        "modified_files": [
+            "App.js"
+        ],
+        "lines_inserted": [
+            14
+        ],
+        "lines_deleted": [
+            1
+        ]
+    },
+    {
+        "hash": "d9ef99377e054bf0d9f14a64b25f71973c45573e",
+        "message": "text form field size fixed",
+        "author": "Ece Karata\u015f",
+        "author_mail": "ece.karatas@ozu.edu.tr",
+        "commit_date": "2024-02-23 12:57:40",
+        "modified_files": [
+            "App.js"
+        ],
+        "lines_inserted": [
+            18
+        ],
+        "lines_deleted": [
+            19
+        ]
+    }
+]
