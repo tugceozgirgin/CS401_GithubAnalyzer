@@ -115,7 +115,8 @@ execute_nodes(developer_execution_commands)
 
 #File Nodes
 file_names = final_df['file_path'].apply(get_file_name).unique()
-print(len(file_names))
+print("Number of files:", len(file_names))
+
 file_id = [i for i in range(1, len(file_names) + 1)]
 file_data = {
     "id": file_id,
@@ -126,74 +127,60 @@ file_execution_commands = []
 for i in file_list:
     neo4j_create_statement = "CREATE (f:Files {file_id:" + str(i[0]) + ", file_name:  '" + str(i[1]) + "'})"
     file_execution_commands.append(neo4j_create_statement)
+
 execute_nodes(file_execution_commands)
 
-# Create Commit Nodes' Cypher code and connect with Neo4j
+#Create Commit Nodes' Cypher code and connect with Neo4j
+commit_execution_commands = []
 
-# commit_execution_commands = []
-#
-# # Iterate over unique commit hashes
-# for commit_hash in final_df['commit_hash'].unique():
-#     commit_data = final_df[final_df['commit_hash'] == commit_hash]
-#
-#     # Aggregate commit attributes
-#     standardized_author = standardize_name(commit_data.iloc[0]['author'])  # Assuming standardize_name function is defined
-#     commit_date = commit_data.iloc[0]['committed_date']
-#     modified_files = commit_data['file_path'].nunique()
-#     lines_inserted = commit_data['sum_added_lines'].sum()
-#     lines_deleted = commit_data['sum_removed_lines'].sum()
-#
-#     # Create a list of modified file names
-#     modified_file_names = []
-#     for file_path in commit_data['file_path']:
-#         file_name = get_file_name(file_path)
-#         if file_name:
-#             modified_file_names.append(file_name)
+# Iterate over unique commit hashes
+for commit_hash in final_df['commit_hash'].unique():
+    commit_data = final_df[final_df['commit_hash'] == commit_hash]
 
-    # Remove duplicate file names
-# modified_file_names = list(set(modified_file_names))
 
-#     # Create Cypher statement for creating Commit Node
-#     neo4j_create_statement = (
-#         f"CREATE (c:Commit {{"
-#         f"commit_hash: '{commit_hash}', "
-#         f"standardized_author: '{standardized_author}', "
-#         f"commit_date: '{commit_date}', "
-#         f"modified_files: {modified_files}, "
-#         f"lines_inserted: {lines_inserted}, "
-#         f"lines_deleted: {lines_deleted}, "
-#         f"modified_file_names: {modified_file_names}"
-#         f"}})"
-#     )
-#     commit_execution_commands.append(neo4j_create_statement)
-#
-#
-# execute_nodes(commit_execution_commands)
-#
-# relationship_commands1 = []
-#
-# # Iterate through the DataFrame
-# for index, row in final_df.iterrows():
-#     commit_hash = row['commit_hash']
-#     author = standardize_name(row['author'])  # Assuming standardize_name function is defined
-#
-#     # Create relationship between Commit-Developer
-#     commit_developer_relationship = (
-#         f"MATCH (c:Commit {{commit_hash: '{commit_hash}'}}), "
-#         f"(d:Developer {{developer_name: '{author}'}}) "
-#         "CREATE (c)-[:AUTHORED_BY]->(d)"
-#     )
-#     relationship_commands1.append(commit_developer_relationship)
-#
-#     # Create relationship between Developer-Commit
-#     developer_commit_relationship = (
-#         f"MATCH (c:Commit {{commit_hash: '{commit_hash}'}}), "
-#         f"(d:Developer {{developer_name: '{author}'}}) "
-#         "CREATE (d)-[:AUTHOR_OF]->(c)"
-#     )
-#     relationship_commands1.append(developer_commit_relationship)
-#
-# execute_nodes(relationship_commands1)
+    # Create Cypher statement for creating Commit Node
+    neo4j_create_statement = (
+        f"CREATE (c:Commit {{"
+        f"commit_hash: '{commit_hash}', "
+        # f"standardized_author: '{standardized_author}', "
+        # f"commit_date: '{commit_date}', "
+        # f"modified_files: {modified_files}, "
+        f"lines_inserted: {commit_data['sum_added_lines'].sum()}, "
+        f"lines_deleted: {commit_data['sum_removed_lines'].sum()} "
+        # f"modified_file_names: {modified_file_names}"
+        f"}})"
+    )
+    commit_execution_commands.append(neo4j_create_statement)
+
+
+execute_nodes(commit_execution_commands)
+
+
+
+relationship_commands1 = []
+
+# Iterate through the DataFrame
+for index, row in final_df.iterrows():
+    commit_hash = row['commit_hash']
+    author = standardize_name(row['author'])  # Assuming standardize_name function is defined
+
+    # Create relationship between Commit-Developer
+    commit_developer_relationship = (
+        f"MATCH (c:Commit {{commit_hash: '{commit_hash}'}}), "
+        f"(d:Developer {{developer_name: '{author}'}}) "
+        "CREATE (c)-[:DEVELOPED_BY]->(d)"
+    )
+    relationship_commands1.append(commit_developer_relationship)
+
+    # Create relationship between Developer-Commit
+    developer_commit_relationship = (
+        f"MATCH (c:Commit {{commit_hash: '{commit_hash}'}}), "
+        f"(d:Developer {{developer_name: '{author}'}}) "
+        "CREATE (d)-[:DEVELOPED]->(c)"
+    )
+    relationship_commands1.append(developer_commit_relationship)
+
+execute_nodes(relationship_commands1)
 
 
 
