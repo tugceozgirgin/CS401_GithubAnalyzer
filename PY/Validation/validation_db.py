@@ -30,9 +30,9 @@ def get_file_name(file_path):
             return file_name
     return None
 
-df_change_set = pd.read_json("O:\proje\CS401_GithubAnalyzer\PY\json_files_for_validation\change_set_pig.json")#("../change_set.json")
+df_change_set = pd.read_json("../change_set_pig.json")#("../change_set.json")
 df_change_set.columns = ['commit_hash', 'committed_date', 'committed_date_zoned', 'message', 'author', 'author_email', 'is_merged']
-df_code_change = pd.read_csv("O:\proje\CS401_GithubAnalyzer\PY\json_files_for_validation\code_change_pig.csv")#("../code_change.csv")
+df_code_change = pd.read_csv("../code_change_pig.csv")#("../code_change.csv")
 df_code_change.columns = ['commit_hash', 'file_path', 'old_file_path', 'change_type', 'is_deleted', 'sum_added_lines', 'sum_removed_lines']
 
 # print(len(df_change_set))
@@ -136,22 +136,23 @@ commit_execution_commands = []
 # Iterate over unique commit hashes
 for commit_hash in final_df['commit_hash'].unique():
     commit_data = final_df[final_df['commit_hash'] == commit_hash]
+    standardized_author = standardize_name(commit_data['author'].iloc[0])  # Assuming standardize_name function is defined
 
+    modified_files = commit_data['file_path'].nunique()
+    modified_file_names = commit_data['file_path'].apply(get_file_name).unique()
 
     # Create Cypher statement for creating Commit Node
     neo4j_create_statement = (
         f"CREATE (c:Commit {{"
         f"commit_hash: '{commit_hash}', "
-        # f"standardized_author: '{standardized_author}', "
-        # f"commit_date: '{commit_date}', "
-        # f"modified_files: {modified_files}, "
+        f"standardized_author: '{standardized_author}', "
         f"lines_inserted: {commit_data['sum_added_lines'].sum()}, "
-        f"lines_deleted: {commit_data['sum_removed_lines'].sum()} "
-        # f"modified_file_names: {modified_file_names}"
+        f"lines_deleted: {commit_data['sum_removed_lines'].sum()}, "
+        f"modified_files: {modified_files}, "
+        f"modified_file_names: {list(modified_file_names)}"
         f"}})"
     )
     commit_execution_commands.append(neo4j_create_statement)
-
 
 execute_nodes(commit_execution_commands)
 

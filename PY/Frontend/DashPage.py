@@ -7,11 +7,15 @@ from PY.analyzes.graph_algorithms import GraphAlgorithms, developers  # Replace 
 
 graph = GraphAlgorithms()
 
+
+# Developerların kapatılan issue'lara etkisi, expertness ve savantness oranlarının hesaplanması
 closedissue_dict = graph.dev_to_closed_issues()
 expertness_dict = graph.find_jacks()
 savantness_dict = graph.find_mavens(0.8)
 is_expert = graph.find_jacks()
 
+
+# DataFrame için verilerin hazırlanması
 data = {
     'Developer Id': graph.get_developers(),
     'Developer Name': graph.get_developer_names(),
@@ -19,10 +23,12 @@ data = {
 
 df = pd.DataFrame(data)
 
+# Kapanan issue sayıları, expertness ve savantness oranları sütunlarının oluşturulması
 df['Closed Issue'] = df['Developer Name'].map(closedissue_dict).fillna(0).astype(int)
 df['Expertness Ratio %'] = (df['Developer Id'].map(expertness_dict).fillna(0).astype(float) * 100).round(2)
 df['Savantness Ratio %'] = (df['Developer Id'].map(savantness_dict).fillna(0).astype(float) * 100).round(2)
 
+# Tüm geliştiriciler için en iyi 3 alternatif geliştiricilerin bulunması
 all_replacements_result = graph.find_replacements_for_all()
 top_3_replacements_result = graph.get_top_similar_developers(all_replacements_result, top_n=3)
 
@@ -39,7 +45,7 @@ for leaving_dev, replacements in top_3_replacements_result.items():
 
 replacement_df = pd.DataFrame(replacement_data)
 
-
+# Expert ve Savant sütunlarının oluşturulması
 def determine_expert(row):
     if row['Expertness Ratio %'] > 20:
         return 'Yes'
@@ -65,6 +71,8 @@ df['Solver'] = df.apply(determine_solver, axis=1)
 
 print(df)
 
+
+# Boxplot ve histogram fonksiyonlarının tanımlanması
 def plot_files_modified_boxplot(graph):
     files_modified_per_developer = graph.list_files_modified_per_developer()
     data = {'Developer': [], 'Modified Files': []}
@@ -271,10 +279,12 @@ def plot_all(self):
 
 
 
-
+# Dash uygulamasının oluşturulması
 from dash import Dash, html, Input, Output, dash_table
 app = Dash(__name__, suppress_callback_exceptions=True)
 
+
+# Uygulamanın düzeni
 app.layout = html.Div([
     html.H4('Github Repository Analysis Outcomes'),
     html.Div(id='table_out'),
@@ -286,19 +296,19 @@ app.layout = html.Div([
             style_header=dict(backgroundColor="paleturquoise"),
             style_data=dict(backgroundColor="lavender")
         ),
-        # dcc.Graph(
-        #     id='bar_plot_issues',
-        #     figure={
-        #         'data': [
-        #             {'x': df['Developer Name'], 'y': df['Closed Issue'], 'type': 'bar', 'name': 'Closed Issues'}
-        #         ],
-        #         'layout': {
-        #             'title': 'Closed Issues per Developer',
-        #             'xaxis': {'title': 'Developer Name'},
-        #             'yaxis': {'title': '# Closed Issues'}
-        #         }
-        #     }
-        # ),
+        dcc.Graph(
+            id='bar_plot_issues',
+            figure={
+                'data': [
+                    {'x': df['Developer Name'], 'y': df['Closed Issue'], 'type': 'bar', 'name': 'Closed Issues'}
+                ],
+                'layout': {
+                    'title': 'Closed Issues per Developer',
+                    'xaxis': {'title': 'Developer Name'},
+                    'yaxis': {'title': '# Closed Issues'}
+                }
+            }
+        ),
 dash_table.DataTable(
         id='replacement_table',
         columns=[
@@ -381,15 +391,15 @@ dash_table.DataTable(
         id='lines_modified_histogram',
         figure=plot_lines_modified_histogram(graph)
     ),
-    dcc.Graph(
-        id='lines_modified_histogram',
-        figure=plot_all(graph)
-    ),
+
     dcc.Graph(
         id='lines_modified_histogram2',
         figure=plot_lines_modified_histogram2(graph) #
     ),
     ])
+
+
+# Tablodaki hücreye tıklanıldığında grafiklerin güncellenmesi
 @app.callback(
     Output('table_out', 'children'),
     Input('table', 'active_cell'))
@@ -398,5 +408,8 @@ def update_graphs(active_cell):
         cell_data = df.iloc[active_cell['row']][active_cell['column_id']]
         return f"Data: \"{cell_data}\" from table cell: {active_cell}"
     return "Click the table"
+
+
+# Uygulamanın başlatılması
 app.run_server(debug=True)
 
