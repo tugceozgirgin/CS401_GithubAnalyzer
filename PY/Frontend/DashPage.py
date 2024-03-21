@@ -286,19 +286,19 @@ app.layout = html.Div([
             style_header=dict(backgroundColor="paleturquoise"),
             style_data=dict(backgroundColor="lavender")
         ),
-        dcc.Graph(
-            id='bar_plot_issues',
-            figure={
-                'data': [
-                    {'x': df['Developer Name'], 'y': df['Closed Issue'], 'type': 'bar', 'name': 'Closed Issues'}
-                ],
-                'layout': {
-                    'title': 'Closed Issues per Developer',
-                    'xaxis': {'title': 'Developer Name'},
-                    'yaxis': {'title': '# Closed Issues'}
-                }
-            }
-        ),
+        # dcc.Graph(
+        #     id='bar_plot_issues',
+        #     figure={
+        #         'data': [
+        #             {'x': df['Developer Name'], 'y': df['Closed Issue'], 'type': 'bar', 'name': 'Closed Issues'}
+        #         ],
+        #         'layout': {
+        #             'title': 'Closed Issues per Developer',
+        #             'xaxis': {'title': 'Developer Name'},
+        #             'yaxis': {'title': '# Closed Issues'}
+        #         }
+        #     }
+        # ),
 dash_table.DataTable(
         id='replacement_table',
         columns=[

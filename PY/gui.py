@@ -16,6 +16,7 @@ app = Flask(__name__)
 CORS(app)  # Tüm kaynaklar için CORS desteğini etkinleştirir
 
 @app.route('/submit-github-link', methods=['POST'])
+
 def submit_github_link():
     try:
         data = request.get_json()
@@ -31,17 +32,18 @@ def submit_github_link():
         commit_data = extract_commit_data(github_link, dt1, dt2)
         output_file_path = 'commit_data.json'
         dump_json_file(output_file_path, commit_data)
-        issues_data = extract_issues(github_link,
-                                     "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")
-        output_file_path_issues = 'issue_data.json'
-        dump_json_file('issue_data.json', issues_data)
+
+        # issues_data = extract_issues(github_link,
+        #                              "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")
+        # output_file_path_issues = 'issue_data.json'
+        # dump_json_file('issue_data.json', issues_data)
 
         # Load commit data from the temporary JSON file
         with open(output_file_path, 'r') as infile:
             loaded_commit_data = json.load(infile)
 
-        with open(output_file_path_issues, 'r') as infile:
-            loaded_issue_data = json.load(infile)
+        # with open(output_file_path_issues, 'r') as infile:
+        #     loaded_issue_data = json.load(infile)
 
         author_commit_counts = extract_author_commit_counts(loaded_commit_data)
         changed_classes = extract_changed_classes(loaded_commit_data)
@@ -61,4 +63,4 @@ def submit_github_link():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5001)
