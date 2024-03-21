@@ -30,9 +30,9 @@ def get_file_name(file_path):
             return file_name
     return None
 
-df_change_set = pd.read_json("../change_set.json")
+df_change_set = pd.read_json("O:\proje\CS401_GithubAnalyzer\PY\json_files_for_validation\change_set_pig.json")#("../change_set.json")
 df_change_set.columns = ['commit_hash', 'committed_date', 'committed_date_zoned', 'message', 'author', 'author_email', 'is_merged']
-df_code_change = pd.read_csv("../code_change.csv")
+df_code_change = pd.read_csv("O:\proje\CS401_GithubAnalyzer\PY\json_files_for_validation\code_change_pig.csv")#("../code_change.csv")
 df_code_change.columns = ['commit_hash', 'file_path', 'old_file_path', 'change_type', 'is_deleted', 'sum_added_lines', 'sum_removed_lines']
 
 # print(len(df_change_set))
@@ -164,11 +164,10 @@ for index, row in final_df.iterrows():
     commit_hash = row['commit_hash']
     author = standardize_name(row['author'])  # Assuming standardize_name function is defined
 
-    # Create relationship between Commit-Developer
     commit_developer_relationship = (
         f"MATCH (c:Commit {{commit_hash: '{commit_hash}'}}), "
         f"(d:Developer {{developer_name: '{author}'}}) "
-        "CREATE (c)-[:DEVELOPED_BY]->(d)"
+        "MERGE (c)-[:DEVELOPED_BY]->(d)"
     )
     relationship_commands1.append(commit_developer_relationship)
 
@@ -176,11 +175,37 @@ for index, row in final_df.iterrows():
     developer_commit_relationship = (
         f"MATCH (c:Commit {{commit_hash: '{commit_hash}'}}), "
         f"(d:Developer {{developer_name: '{author}'}}) "
-        "CREATE (d)-[:DEVELOPED]->(c)"
+        "MERGE (d)-[:DEVELOPED]->(c)"
     )
+
     relationship_commands1.append(developer_commit_relationship)
 
 execute_nodes(relationship_commands1)
+
+relationship_commands2 = []
+
+# Iterate through the DataFrame
+for index, row in final_df.iterrows():
+    commit_hash = row['commit_hash']
+    file_name = get_file_name(row['file_path'])  # Assuming get_file_name function is defined
+
+    # Create relationship between Commit-File
+    commit_file_relationship = (
+        f"MATCH (c:Commit {{commit_hash: '{commit_hash}'}}), "
+        f"(f:Files {{file_name: '{file_name}'}}) "
+        "MERGE (c)-[:MODIFIED]->(f)"
+    )
+    relationship_commands2.append(commit_file_relationship)
+
+    # Create relationship between File-Commit
+    file_commit_relationship = (
+        f"MATCH (c:Commit {{commit_hash: '{commit_hash}'}}), "
+        f"(f:Files {{file_name: '{file_name}'}}) "
+        "MERGE (f)-[:MODIFIED_BY]->(c)"
+    )
+    relationship_commands2.append(file_commit_relationship)
+
+execute_nodes(relationship_commands2)
 
 
 
