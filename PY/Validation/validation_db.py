@@ -7,11 +7,14 @@ data_base_connection = GraphDatabase.driver(uri="bolt://localhost:7687", auth=("
 session = data_base_connection.session()
 delete_all_command = "MATCH (n) DETACH DELETE n"
 session.run(delete_all_command)
+
+
 def execute_nodes(commands):
     data_base_connection = GraphDatabase.driver(uri="bolt://localhost:7687", auth=("neo4j", "password"))
     session = data_base_connection.session()
     for i in commands:
         session.run(i)
+
 
 def standardize_name(name):
     # Replace Turkish characters with their English counterparts
@@ -22,6 +25,7 @@ def standardize_name(name):
     standardized_name = ''.join(e for e in name if e.isalnum() or e.isspace()).lower().replace(" ", "")
     return standardized_name
 
+
 def get_file_name(file_path):
     last_slash_index = file_path.rfind('/')
     if 0 <= last_slash_index < len(file_path) - 1:
@@ -30,10 +34,13 @@ def get_file_name(file_path):
             return file_name
     return None
 
+
 df_change_set = pd.read_json("../change_set.json")
-df_change_set.columns = ['commit_hash', 'committed_date', 'committed_date_zoned', 'message', 'author', 'author_email', 'is_merged']
+df_change_set.columns = ['commit_hash', 'committed_date', 'committed_date_zoned', 'message', 'author', 'author_email',
+                         'is_merged']
 df_code_change = pd.read_csv("../code_change.csv")
-df_code_change.columns = ['commit_hash', 'file_path', 'old_file_path', 'change_type', 'is_deleted', 'sum_added_lines', 'sum_removed_lines']
+df_code_change.columns = ['commit_hash', 'file_path', 'old_file_path', 'change_type', 'is_deleted', 'sum_added_lines',
+                          'sum_removed_lines']
 
 # print(len(df_change_set))
 # print(len(df_code_change))
@@ -51,8 +58,9 @@ pd.set_option('display.max_rows', 150)
 pd.set_option('display.width', None)
 
 # remove duplicate commits with different commit hash
-final_df.drop_duplicates(subset=['committed_date', 'committed_date_zoned', 'message', 'author', 'author_email', 'is_merged', 'file_path', 'old_file_path', 'change_type', 'is_deleted', 'sum_added_lines', 'sum_removed_lines'], inplace=True)
-
+final_df.drop_duplicates(
+    subset=['committed_date', 'committed_date_zoned', 'message', 'author', 'author_email', 'is_merged', 'file_path',
+            'old_file_path', 'change_type', 'is_deleted', 'sum_added_lines', 'sum_removed_lines'], inplace=True)
 
 # Filter out rows where is_merged column is equal to 1
 final_df = final_df[final_df['is_merged'] != 1]
@@ -79,8 +87,7 @@ for email, names in author_groups.items():
 # Use the lookup table to correct author names in the DataFrame
 final_df['author'] = final_df['author'].map(lookup_table).fillna(final_df['author'])
 
-
-#Filter out rows where change_type column is equal to "DELETE"
+# Filter out rows where change_type column is equal to "DELETE"
 final_df = final_df[final_df['change_type'] != 'DELETE']
 print(final_df.head(50))
 unique_authors_count = final_df['author'].nunique()
@@ -88,7 +95,7 @@ print("Number of unique authors:", unique_authors_count)
 unique_commits_count = final_df['commit_hash'].nunique()
 print("Number of unique commits:", unique_commits_count)
 
-#Developer Nodes
+# Developer Nodes
 unique_developers = final_df['author'].unique()
 developer_data = {
     "id": range(1, len(unique_developers) + 1),
@@ -105,7 +112,7 @@ for index, row in developer_list.iterrows():
     developer_execution_commands.append(neo4j_create_statement)
 execute_nodes(developer_execution_commands)
 
-#File Nodes
+# File Nodes
 file_names = final_df['file_path'].apply(get_file_name).unique()
 print("Number of files:", len(file_names))
 
@@ -122,8 +129,10 @@ for i in file_list:
 
 execute_nodes(file_execution_commands)
 
-#Create Commit node
-commit_df = pd.DataFrame(columns=['commit_id', 'commit_hash', 'commit_author', 'commit_date', 'modified_files', 'lines_inserted', 'lines_deleted'])
+# Create Commit node
+commit_df = pd.DataFrame(
+    columns=['commit_id', 'commit_hash', 'commit_author', 'commit_date', 'modified_files', 'lines_inserted',
+             'lines_deleted'])
 unique_commit_hashes = final_df['commit_hash'].unique()
 commit_df = pd.DataFrame({'commit_hash': unique_commit_hashes})
 commit_df['commit_id'] = commit_df.reset_index().index + 1
@@ -131,23 +140,30 @@ commit_author_mapping = final_df.set_index('commit_hash')['author'].to_dict()
 commit_df['commit_author'] = commit_df['commit_hash'].map(commit_author_mapping)
 commit_date_mapping = final_df.set_index('commit_hash')['committed_date'].to_dict()
 commit_df['commit_date'] = commit_df['commit_hash'].map(commit_date_mapping)
+
+
 def get_modified_files(commit_group):
     modified_files = commit_group['file_path'].apply(get_file_name).dropna().tolist()
     return modified_files
 
+
 modified_files_df = final_df.groupby('commit_hash').apply(get_modified_files).reset_index(name='modified_files')
 commit_df = pd.merge(commit_df, modified_files_df, on='commit_hash', how='left')
+
 
 def get_lines_inserted(commit_group):
     lines_inserted = commit_group['sum_added_lines'].dropna().tolist()
     return lines_inserted
 
+
 lines_inserted = final_df.groupby('commit_hash').apply(get_lines_inserted).reset_index(name='lines_inserted')
 commit_df = pd.merge(commit_df, lines_inserted, on='commit_hash', how='left')
+
 
 def get_lines_deleted(commit_group):
     lines_deleted = commit_group['sum_removed_lines'].dropna().tolist()
     return lines_deleted
+
 
 lines_deleted = final_df.groupby('commit_hash').apply(get_lines_deleted).reset_index(name='lines_deleted')
 commit_df = pd.merge(commit_df, lines_deleted, on='commit_hash', how='left')
@@ -172,15 +188,48 @@ for index, row in commit_df.iterrows():
     commit_execution_commands.append(neo4j_create_statement)
 
 neo4j_create_relation_dev_statement_commit = (
-            "MATCH (c:Commit), (d:Developer) "
-            "WHERE c.commit_author = d.developer_name "
-            "MERGE (c)-[:DEVELOPED_BY]->(d)"
-        )
+    "MATCH (c:Commit), (d:Developer) "
+    "WHERE c.commit_author = d.developer_name "
+    "MERGE (c)-[:DEVELOPED_BY]->(d)"
+)
 commit_execution_commands.append(neo4j_create_relation_dev_statement_commit)
 bidirectional_dev_commit_relation = (
-            "MATCH (c:Commit), (d:Developer) "
-            "WHERE c.commit_author = d.developer_name "
-            "MERGE (d)-[:DEVELOPED]->(c)"
-        )
+    "MATCH (c:Commit), (d:Developer) "
+    "WHERE c.commit_author = d.developer_name "
+    "MERGE (d)-[:DEVELOPED]->(c)"
+)
 commit_execution_commands.append(bidirectional_dev_commit_relation)
 execute_nodes(commit_execution_commands)
+
+# Commit-File Relations
+# Create relationships between Commit-File based on modified_files
+commit_file_relation_commands = []
+file_commit_relation_commands = []
+
+for index, commit in commit_df.iterrows():
+    commit_hash = commit['commit_hash']  # Fix here, use 'commit_hash' instead of 'hash'
+    modified_files = commit['modified_files']
+    lines_inserted = commit['lines_inserted']
+    lines_deleted = commit['lines_deleted']
+
+    for idx, file_name in enumerate(modified_files):
+        inserted = lines_inserted[idx]
+        deleted = lines_deleted[idx]
+
+        neo4j_create_relation_file_statement = (
+            f"MATCH (c:Commit {{commit_hash: '{commit_hash}'}}), "
+            f"(f:Files {{file_name: '{file_name}'}}) "
+            f"CREATE (c)-[:MODIFIED {{inserted_lines: {inserted}, deleted_lines: {deleted} }}]->(f)"
+        )
+        commit_file_relation_commands.append(neo4j_create_relation_file_statement)
+
+        # New relationship creation from File to Commit
+        file_to_commit_statement = (
+            f"MATCH (c:Commit {{commit_hash: '{commit_hash}'}}), "
+            f"(f:Files {{file_name: '{file_name}'}}) "
+            f"CREATE (f)-[:MODIFIED_BY {{inserted_lines: {inserted}, deleted_lines: {deleted} }}]->(c)"
+        )
+        file_commit_relation_commands.append(file_to_commit_statement)
+
+execute_nodes(commit_file_relation_commands)
+execute_nodes(file_commit_relation_commands)
