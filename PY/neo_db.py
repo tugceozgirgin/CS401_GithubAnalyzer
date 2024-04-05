@@ -1,9 +1,9 @@
 import datetime as dt
 import json
-from typing import Dict, List
+from typing import Dict
 
 import pandas as pd
-from PY.api.data import get_files_from_json, \
+from PY.data import get_files_from_json, \
     get_developers_from_json, read_from_json, get_all_files, \
     calculate_file_change_coverage, calculate_file_change_coverage_ratio, get_first_last_commit_dates
 from neo4j import GraphDatabase
@@ -43,8 +43,8 @@ def calculate_date_difference_in_days(first_date_str, last_date_str):
 
 
 class NEO:
-    def __init__(self, github_link):
-        self.github_link = github_link
+    def __init__(self):
+        pass
 
     def run(self):
         # Add this section to delete all existing nodes
@@ -52,7 +52,7 @@ class NEO:
         session = data_base_connection.session()
         delete_all_command = "MATCH (n) DETACH DELETE n"
         session.run(delete_all_command)
-
+        print("neo")
         # Create Developer Nodes' Cypher code and connect with Neo4j
         developers = get_developers_from_json()
         developer_id = [i for i in range(1, len(developers) + 1)]
@@ -107,52 +107,7 @@ class NEO:
 
             commit_execution_commands.append(neo4j_create_statement)
 
-        # Create Issue Nodes
-        issues_data = read_from_json("issue_data.json")
-        issue_execution_commands = []
-        for issue in issues_data:
-            neo4j_create_statement = (
-                    "CREATE (i:Issue {"
-                    "issue_id: " + str(issue['id']) + ", "
-                    "title: '" + issue['title'].replace("'", "\\'") + "', "
-                    "description: '" + ( issue['description'].replace("'", "\\'") if issue['description'] is not None else "") + "', "
-                    "state: '" +issue['state'] + "', "
-                    "created_at: '" + issue['created_at'] + "', "
-                    "closed_at: " + (f"'{issue['closed_at']}'" if issue['closed_at'] is not None else "null") + ", "
-                    "closed_by: " + (f"'{issue['closed_by']}'" if issue['closed_by'] is not None else "null") + ", "
-                    #"opened_by: " + (f"'{issue['opened_by']}'" if issue['opened_by'] is not None else "null") + "'})"
-                    "opened_by: '" +issue['opened_by'] + "'})"
-            )
 
-            issue_execution_commands.append(neo4j_create_statement)
-        execute_nodes(issue_execution_commands)
-
-        # Create relationships between Developer and Issue nodes based on opened_by and closed_by fields
-        developer_issue_relation_commands = []
-
-        for issue in issues_data:
-            opened_by = issue['opened_by']
-            closed_by = issue['closed_by']
-
-            if opened_by:
-                opened_by_standardized = standardize_name(opened_by)
-                neo4j_create_relation_dev_issue_statement = (
-                    f"MATCH (d1:Developer {{developer_name: '{opened_by_standardized}'}}), "
-                    f"(i:Issue {{issue_id: {issue['id']}}}) "
-                    f"CREATE (d1)-[:OPENED]->(i)"
-                )
-                developer_issue_relation_commands.append(neo4j_create_relation_dev_issue_statement)
-
-            if closed_by:
-                closed_by_standardized = standardize_name(closed_by)
-                neo4j_create_relation_dev_issue_statement = (
-                    f"MATCH (d2:Developer {{developer_name: '{closed_by_standardized}'}}), "
-                    f"(i:Issue {{issue_id: {issue['id']}}}) "
-                    f"CREATE (i)-[:CLOSED_BY]->(d2)"
-                )
-                developer_issue_relation_commands.append(neo4j_create_relation_dev_issue_statement)
-
-        execute_nodes(developer_issue_relation_commands)
 
         # Create relationships between Commit-Developer
         # Create relationships between Developer-Commit

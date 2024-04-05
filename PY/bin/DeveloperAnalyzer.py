@@ -5,7 +5,6 @@ import numpy as np
 import seaborn as sns
 import pandas as pd
 
-from PY.api.data import read_from_json
 
 class DeveloperAnalyzer:
     def __init__(self, commit_data, issues_data, github_link=None):
