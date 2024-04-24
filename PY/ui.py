@@ -161,6 +161,7 @@ def get_similarity():
 
 
 
+
 @app.route('/get-distribution', methods=['GET'])
 def get_distribution():
     try:
