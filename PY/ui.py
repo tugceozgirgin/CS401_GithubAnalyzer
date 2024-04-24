@@ -4,9 +4,7 @@ import time
 from flask import Flask, request, jsonify
 from PY.data import dump_json_file, extract_commit_data
 from flask_cors import CORS
-from app import App
 
-app_instance = App()
 
 # Define excluded extensions for various file types
 excluded_extensions = {
@@ -55,6 +53,8 @@ def get_developer_info():
         while not os.path.exists(output_file_path):
             time.sleep(1)
 
+        from app import App
+        app_instance = App()
 
         # Load commit data from the temporary JSON file
         with open(output_file_path, 'r') as infile:

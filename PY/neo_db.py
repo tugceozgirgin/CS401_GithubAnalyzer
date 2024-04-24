@@ -1,5 +1,6 @@
 import datetime as dt
 import json
+import os
 from typing import Dict
 
 import pandas as pd
@@ -7,6 +8,7 @@ from PY.data import get_files_from_json, \
     get_developers_from_json, read_from_json, get_all_files, \
     calculate_file_change_coverage, calculate_file_change_coverage_ratio, get_first_last_commit_dates
 from neo4j import GraphDatabase
+
 
 commit_data = read_from_json('commit_data.json')
 first_date, last_date = get_first_last_commit_dates(commit_data)
