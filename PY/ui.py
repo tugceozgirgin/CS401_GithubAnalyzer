@@ -5,6 +5,7 @@ import time
 from flask import Flask, request, jsonify
 from PY.data import dump_json_file, extract_commit_data
 from flask_cors import CORS
+import plotly.graph_objs as go
 
 
 # Define excluded extensions for various file types
@@ -183,6 +184,33 @@ def get_distribution():
 
     except Exception as e:
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
+from flask import jsonify
+
+@app.route('/get-chart-data', methods=['GET'])
+def get_chart_data():
+    try:
+        # Manually define x and y points for the chart
+        labels = ['Elif', 'Ece', 'Tuğçe', 'Ed', 'Jana', 'Hasan', 'Ahmet', 'Mehmet', 'Eylül', 'Berra', 'Kasım', 'Can']
+        data_points = [10, 20, 15, 25, 30, 20, 10, 15, 25, 20, 30, 25]
+
+        # Combine labels and data points into a dictionary
+        chart_data = {
+            'labels': labels,  # x axis labels
+            'datapoints': data_points
+        }
+
+        # Return the chart data
+        return jsonify(chart_data), 200
+
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
+
+
+
 
 
 
