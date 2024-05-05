@@ -36,8 +36,6 @@ def submit_github_link():
         dump_json_file(output_file_path, commit_data)
 
 
-
-
         # Return success response
         return jsonify({'success': True}), 200
 
@@ -71,6 +69,7 @@ def get_developer_info():
             'developerIDs': developer_ids,
             'developerNames': developer_names
         }
+        print("get info 1")
         return jsonify(developer_info), 200
 
     except Exception as e:
@@ -105,6 +104,8 @@ def get_developer_info2():
             'developerNames': developer_names,
             'isJack': developer_is_jack
         }
+        print("get info 2")
+
         return jsonify(developer_info), 200
 
     except Exception as e:
@@ -128,6 +129,8 @@ def get_developer_info3():
             'developerNames': developer_names,
             'Maven': developer_maven
         }
+        print("get info 3")
+
         return jsonify(developer_info), 200
 
     except Exception as e:
@@ -163,42 +166,25 @@ def get_similarity():
 
 
 
-@app.route('/get-distribution', methods=['GET'])
-def get_distribution():
-    try:
-        from app import App
-        app_instance = App()
-
-        # Generate the distribution plot
-        fig_plotly = app_instance.plot_lines_modified_histogram2()
-
-        if fig_plotly:
-            # Convert Plotly figure to PNG image
-            img_bytes = fig_plotly.to_image(format="png")
-            img_base64 = base64.b64encode(img_bytes).decode('utf-8')
-
-            # Return the image data
-            return f"data:image/png;base64,{img_base64}"
-        else:
-            return jsonify({'error': 'No data available for distribution plot'}), 404
-
-    except Exception as e:
-        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
-
-
 from flask import jsonify
 
 @app.route('/get-chart-data', methods=['GET'])
 def get_chart_data():
     try:
-        # Manually define x and y points for the chart
-        labels = ['Elif', 'Ece', 'Tuğçe', 'Ed', 'Jana', 'Hasan', 'Ahmet', 'Mehmet', 'Eylül', 'Berra', 'Kasım', 'Can']
-        data_points = [10, 20, 15, 25, 30, 20, 10, 15, 25, 20, 30, 25]
+        from app import App
+        app_instance = App()
+
+        # Extract developer info
+        developer_commits = app_instance.calculate_commits_per_developer()
+
+        # Extracting developer names and commits count
+        developer_names = list(developer_commits.keys())
+        developer_counts = list(developer_commits.values())
 
         # Combine labels and data points into a dictionary
         chart_data = {
-            'labels': labels,  # x axis labels
-            'datapoints': data_points
+            'labels': developer_names,  # x axis labels
+            'datapoints': developer_counts,
         }
 
         # Return the chart data
@@ -208,7 +194,89 @@ def get_chart_data():
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
+@app.route('/get-chart-data2', methods=['GET'])
+def get_chart_data2():
+    try:
+        from app import App
+        app_instance = App()
 
+        # Extract developer info
+        developer_files = app_instance.calculate_files_per_developer()
+
+        # Extracting developer names and commits count
+        developer_names = list(developer_files.keys())
+        developer_files_ = list(developer_files.values())
+
+        # Combine labels and data points into a dictionary
+        chart_data = {
+            'labels': developer_names,  # x axis labels
+            'datapoints': developer_files_,
+        }
+
+        # Return the chart data
+        return jsonify(chart_data), 200
+
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
+@app.route('/get-chart-data3', methods=['GET'])
+def get_chart_data3():
+    try:
+        from app import App
+        app_instance = App()
+
+        # Extract lines modified per commit by each developer
+        developer_lines = app_instance.calculate_lines_per_developer()
+
+        # Extracting developer names and lines modified count
+        developer_names = list(developer_lines.keys())
+        developer_lines_ = list(developer_lines.values())
+
+        # Combine labels and data points into a dictionary
+        chart_data = {
+            'labels': developer_names,  # x axis labels
+            'datapoints': developer_lines_,
+        }
+
+        # Return the chart data
+        return jsonify(chart_data), 200
+
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+@app.route('/get-chart-data4', methods=['GET'])
+def get_chart_data4():
+    try:
+        from app import App
+        app_instance = App()
+
+        all_replacements_result = app_instance.find_replacements_for_all()
+
+        # Get all developers
+        all_devs = list(all_replacements_result.keys())
+
+        # Initialize similarity matrix
+        similarity_matrix = []
+
+        # Iterate through developers to populate similarity matrix
+        for dev1 in all_devs:
+            row = []
+            for dev2 in all_devs:
+                # If dev1 is the same as dev2, similarity is 1
+                if dev1 == dev2:
+                    similarity = 1.0
+                else:
+                    # Get similarity between dev1 and dev2
+                    similarity = all_replacements_result[dev1].get(dev2, 0.0)  # Default to 0 if no similarity found
+                row.append(similarity)
+            similarity_matrix.append(row)
+
+        # Return the similarity matrix
+        return jsonify(similarity_matrix), 200
+
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
 
