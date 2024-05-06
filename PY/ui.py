@@ -2,6 +2,8 @@ import base64
 import json
 import os
 import time
+
+import numpy as np
 from flask import Flask, request, jsonify
 from PY.data import dump_json_file, extract_commit_data
 from flask_cors import CORS
@@ -41,7 +43,6 @@ def submit_github_link():
 
     except Exception as e:
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
-
 
 
 
@@ -95,21 +96,23 @@ def get_developer_info2():
         developer_ids = app_instance.get_developers()
         developer_names = app_instance.get_developer_names()
 
-        # Calculate whether each developer is a "JACK"
-        dev_to_file_coverage = app_instance.find_jacks()  # Calculate coverage
-        developer_is_jack = {developer_id: app_instance.is_jack(dev_to_file_coverage, developer_id) for developer_id in developer_ids}
+        # Calculate JACK ratios for each developer
+        developer_jack_ratios = app_instance.find_jacks()
 
         developer_info = {
             'developerIDs': developer_ids,
             'developerNames': developer_names,
-            'isJack': developer_is_jack
+            'JackRatios': developer_jack_ratios
         }
-        print("get info 2")
+        #print(developer_jack_ratios)
 
         return jsonify(developer_info), 200
 
     except Exception as e:
-        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+        print("Error in get_developer_info2:", e)
+        return jsonify({'error': 'Internal Server Error'}), 500
+
+
 
 @app.route('/get-developer-info3', methods=['GET'])
 def get_developer_info3():
@@ -130,6 +133,31 @@ def get_developer_info3():
             'Maven': developer_maven
         }
         print("get info 3")
+        #print(developer_maven)
+
+        return jsonify(developer_info), 200
+
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+@app.route('/get-developer-info4', methods=['GET'])
+def get_developer_info4():
+    try:
+        from app import App
+        app_instance = App()
+
+        total_commit_count = sum(app_instance.calculate_commits_per_developer().values())
+        total_file_count = app_instance.get_num_files()
+        total_developer_count = len(app_instance.get_developers())
+        developer_names = app_instance.get_developer_names()
+
+        developer_info = {
+                'total_commit_count': total_commit_count,
+                'total_file_count': total_file_count,
+                'total_developer_count': total_developer_count,
+                'developer_names': developer_names
+        }
+        #print(total_commit_count)
 
         return jsonify(developer_info), 200
 
@@ -151,6 +179,7 @@ def get_similarity():
 
         # Extract developer info
         developer_ids = app_instance.get_developers()
+        #print(developer_ids)
         developer_names = app_instance.get_developer_names()
 
         developer_info = {
@@ -280,6 +309,46 @@ def get_chart_data4():
 
 
 
+@app.route('/get_balanced', methods=['GET'])
+def get_balanced():
+    try:
+        from app import App
+        app_instance = App()
+
+        # Assuming you have a function list_lines_modified_per_developer implemented somewhere
+        lines_modified_per_developer = app_instance.list_lines_modified_per_developer()
+        lines_modified_values = list(lines_modified_per_developer.values())
+
+        # Calculate the average lines modified
+        average_lines_modified = sum(lines_modified_values) / len(lines_modified_values)
+        print(lines_modified_values)
+        print(average_lines_modified)
+
+        # Calculate the bin width for the histogram
+        iqr = np.percentile(lines_modified_values, 75) - np.percentile(lines_modified_values, 25)
+        bin_width = 2 * iqr / (len(lines_modified_values) ** (1 / 3))
+        bin_width /= 4
+
+        # Define the bins for the histogram
+        min_value = min(lines_modified_values)
+        max_value = max(lines_modified_values)
+        bins = np.arange(min_value, max_value + bin_width, bin_width)
+
+        developer_names = app_instance.get_developer_names()
+
+
+        # Create data in Chart.js format
+        chart_data = {
+            'developerNames': developer_names,
+            'lines_modified_values': lines_modified_values,
+            'average_lines_modified': average_lines_modified,
+            'bins': bins.tolist()  # Convert numpy array to list
+        }
+
+        return jsonify(chart_data), 200
+
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
 if __name__ == "__main__":

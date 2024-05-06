@@ -105,6 +105,7 @@ class App:
                 all_files.update(record["f.file_name"] for record in result)
 
         return len(all_files)
+
     def find_jacks(self):
         dev_to_files = self.dev_to_files()
         dev_to_file_coverage = {}
@@ -117,6 +118,7 @@ class App:
 
         sorted_dev_to_file_coverage = self.sort_by_value(dev_to_file_coverage)
         return sorted_dev_to_file_coverage
+
     @staticmethod
     def sort_by_value(dictionary):
         sorted_items = sorted(dictionary.items(), key=lambda x: x[1], reverse=True)
@@ -307,5 +309,20 @@ class App:
 
         return dict(lines_modified_per_commit)
 
+    def list_lines_modified_per_developer(self):
+        lines_modified_per_developer = defaultdict(int)
 
+        with self._driver.session() as session:
+            result = session.run(
+                "MATCH (d:Developer)-[:DEVELOPED]->(c:Commit)-[r:MODIFIED]->(f:Files) "
+                "RETURN d.developer_id AS developer_id, "
+                "SUM(r.inserted_lines + r.deleted_lines) AS total_lines_modified"
+            )
+
+            for record in result:
+                developer_id = record['developer_id']
+                total_lines_modified = record['total_lines_modified']
+                lines_modified_per_developer[developer_id] += total_lines_modified
+
+        return dict(lines_modified_per_developer)
 
