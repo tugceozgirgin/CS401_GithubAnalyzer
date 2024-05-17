@@ -1,5 +1,4 @@
 import json
-
 import pandas as pd
 from neo4j import GraphDatabase
 
@@ -35,15 +34,14 @@ def get_file_name(file_path):
     return None
 
 
-df_change_set = pd.read_json("../change_set.json")
+
+# PREPROCESSING
+df_change_set = pd.read_json("../json_files_for_validation/change_set_zoo.json")
 df_change_set.columns = ['commit_hash', 'committed_date', 'committed_date_zoned', 'message', 'author', 'author_email',
                          'is_merged']
-df_code_change = pd.read_csv("../code_change.csv")
+df_code_change = pd.read_csv("../csv_files/zoo_code_change.csv")
 df_code_change.columns = ['commit_hash', 'file_path', 'old_file_path', 'change_type', 'is_deleted', 'sum_added_lines',
                           'sum_removed_lines']
-
-# print(len(df_change_set))
-# print(len(df_code_change))
 
 # Filter .java extennsions
 java_changes = df_code_change[df_code_change['file_path'].str.endswith('.java')]
@@ -58,15 +56,16 @@ pd.set_option('display.max_rows', 150)
 pd.set_option('display.width', None)
 
 # remove duplicate commits with different commit hash
-final_df.drop_duplicates(
-    subset=['committed_date', 'committed_date_zoned', 'message', 'author', 'author_email', 'is_merged', 'file_path',
-            'old_file_path', 'change_type', 'is_deleted', 'sum_added_lines', 'sum_removed_lines'], inplace=True)
+# final_df.drop_duplicates(
+#     subset=['committed_date', 'committed_date_zoned', 'message', 'author', 'author_email', 'is_merged', 'file_path',
+#             'old_file_path', 'change_type', 'is_deleted', 'sum_added_lines', 'sum_removed_lines'], inplace=True)
 
 # Filter out rows where is_merged column is equal to 1
 final_df = final_df[final_df['is_merged'] != 1]
 
 # Count the number of unique authors
 unique_authors_count = final_df['author'].nunique()
+
 
 # Group by author email and collect unique author names for each email
 author_groups = final_df.groupby('author_email')['author'].unique()
@@ -78,23 +77,38 @@ lookup_table = {}
 for email, names in author_groups.items():
     # Check if there are different names for the same email
     if len(names) > 1:
-        # Choose a standardized name (you can choose the first one for simplicity)
         standard_name = names[0]
-        # Update the lookup table with email to standardized name mappings
+
         for name in names:
             lookup_table[name] = standard_name
 
 # Use the lookup table to correct author names in the DataFrame
 final_df['author'] = final_df['author'].map(lookup_table).fillna(final_df['author'])
 
-# Filter out rows where change_type column is equal to "DELETE"
-final_df = final_df[final_df['change_type'] != 'DELETE']
+
+# Choosen dates:18-Nov-2016 / 18-Nov-2017 --> filter out  the rest
+final_df['committed_date'] = pd.to_datetime(final_df['committed_date'])
+
+start_date = pd.Timestamp('2016-10-06', tz='UTC')
+end_date = pd.Timestamp('2017-10-06', tz='UTC')
+
+# Filter the DataFrame to keep rows within the specified date range
+final_df = final_df[(final_df['committed_date'] >= start_date) & (final_df['committed_date'] <= end_date)]
+
+# if includes more than 50 files ignore
+commit_counts = final_df['commit_hash'].value_counts()
+valid_hashes = commit_counts[commit_counts < 50].index
+final_df = final_df[final_df['commit_hash'].isin(valid_hashes)]
+
 print(final_df.head(50))
 unique_authors_count = final_df['author'].nunique()
 print("Number of unique authors:", unique_authors_count)
 unique_commits_count = final_df['commit_hash'].nunique()
 print("Number of unique commits:", unique_commits_count)
 
+
+
+#NEO CREATION
 # Developer Nodes
 unique_developers = final_df['author'].unique()
 developer_data = {
