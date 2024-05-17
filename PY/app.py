@@ -105,6 +105,7 @@ class App:
                 all_files.update(record["f.file_name"] for record in result)
 
         return len(all_files)
+
     def find_jacks(self):
         dev_to_files = self.dev_to_files()
         dev_to_file_coverage = {}
@@ -117,6 +118,7 @@ class App:
 
         sorted_dev_to_file_coverage = self.sort_by_value(dev_to_file_coverage)
         return sorted_dev_to_file_coverage
+
     @staticmethod
     def sort_by_value(dictionary):
         sorted_items = sorted(dictionary.items(), key=lambda x: x[1], reverse=True)
@@ -224,14 +226,14 @@ class App:
         with self._driver.session() as session:
             result = session.run(
                 "MATCH (d:Developer)-[:DEVELOPED]->(c:Commit) "
-                "RETURN d.developer_id AS developer_id, COUNT(c) AS commit_count"
+                "RETURN d.developer_name AS developer_name, COUNT(c) AS commit_count"
             )
 
             for record in result:
-                developer_id = record['developer_id']
+                developer_name = record['developer_name']
                 commit_count = record['commit_count']
 
-                commits_per_developer[developer_id] = commit_count
+                commits_per_developer[developer_name] = commit_count
 
         return commits_per_developer
 
@@ -241,16 +243,33 @@ class App:
         with self._driver.session() as session:
             result = session.run(
                 "MATCH (d:Developer)-[:DEVELOPED]->(c:Commit)-[:MODIFIED]->(f:Files) "
-                "RETURN d.developer_id AS developer_id, COUNT(DISTINCT f) AS files_count"
+                "RETURN d.developer_name AS developer_name, COUNT(DISTINCT f) AS files_count"
             )
 
             for record in result:
-                developer_id = record['developer_id']
+                developer_name = record['developer_name']
                 files_count = record['files_count']
 
-                files_per_developer[developer_id] = files_count
+                files_per_developer[developer_name] = files_count
 
         return files_per_developer
+
+    def calculate_lines_per_developer(self):
+        total_lines_modified = {}
+
+        with self._driver.session() as session:
+            result = session.run(
+                "MATCH (d:Developer)-[:DEVELOPED]->(c:Commit)-[r:MODIFIED]->(f:Files) "
+                "RETURN d.developer_name AS developer_name, "
+                "SUM(r.inserted_lines + r.deleted_lines) AS total_lines_modified"
+            )
+
+            for record in result:
+                developer_name = record['developer_name']
+                total_lines_modified[developer_name] = record['total_lines_modified']
+
+        return total_lines_modified
+
 
     def list_files_modified_per_developer(self):
         files_modified_per_developer = defaultdict(int)
@@ -290,40 +309,20 @@ class App:
 
         return dict(lines_modified_per_commit)
 
-    def plot_lines_modified_histogram2(self):
-        import matplotlib.pyplot as plt
-        import io
-        import base64
+    def list_lines_modified_per_developer(self):
+        lines_modified_per_developer = defaultdict(int)
 
-        # Retrieve lines modified data
-        lines_modified_per_developer = self.list_lines_modified_per_developer()
+        with self._driver.session() as session:
+            result = session.run(
+                "MATCH (d:Developer)-[:DEVELOPED]->(c:Commit)-[r:MODIFIED]->(f:Files) "
+                "RETURN d.developer_id AS developer_id, "
+                "SUM(r.inserted_lines + r.deleted_lines) AS total_lines_modified"
+            )
 
-        # Extract lines modified values for each developer
-        lines_modified_values = list(lines_modified_per_developer.values())
+            for record in result:
+                developer_id = record['developer_id']
+                total_lines_modified = record['total_lines_modified']
+                lines_modified_per_developer[developer_id] += total_lines_modified
 
-        # Create histogram with Matplotlib
-        if lines_modified_values:
-            fig, ax = plt.subplots(figsize=(20, 12))
+        return dict(lines_modified_per_developer)
 
-            # Create histogram
-            ax.hist(lines_modified_values, bins=30, edgecolor='black', alpha=0.7)
-
-            # Set labels and title
-            ax.set_xlabel('Total Lines Modified')
-            ax.set_ylabel('Number of Developers')
-            ax.set_title('Lines Modified Distribution per Developer')
-
-            # Save the plot to a bytes buffer
-            buffer = io.BytesIO()
-            plt.savefig(buffer, format='png')
-            buffer.seek(0)
-
-            # Encode the plot image to base64
-            img_base64 = base64.b64encode(buffer.read()).decode('utf-8')
-            plt.close(fig)
-
-            # Return the base64-encoded image data
-            return f"data:image/png;base64,{img_base64}"
-
-        else:
-            return None
