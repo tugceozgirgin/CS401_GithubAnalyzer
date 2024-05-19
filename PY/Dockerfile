@@ -5,12 +5,20 @@ FROM python:3.9-slim
 WORKDIR /app
 
 # Copy requirements file and install dependencies
-RUN echo "numpy" >> requirements.txt
+#RUN echo "numpy" >> requirements.txt
+#RUN echo "github" >> requirements.txt
+
 COPY requirements /app/requirements
-RUN pip freeze > requirements.txt
+
+COPY requirements /app/requirements.txt
+
+#RUN pip freeze > requirements.txt
+RUN pip install -r /app/requirements
 
 # Copy the rest of the application
-COPY ui.py /app
+COPY CS401_GithubAnalyzer /app/CS401_GithubAnalyzer
+
+WORKDIR /app/CS401_GithubAnalyzer/PY
 
 # Run ui.py when the container launches
 CMD ["python", "ui.py"]

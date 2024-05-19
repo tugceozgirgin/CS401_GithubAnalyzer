@@ -5,10 +5,11 @@ import time
 
 import numpy as np
 from flask import Flask, request, jsonify
-#from PY.data import dump_json_file, extract_commit_data
 from flask_cors import CORS
-from CS401_GithubAnalyzer.PY.data import extract_commit_data, dump_json_file
 
+from data import extract_commit_data, dump_json_file
+
+print("test")
 
 # Define excluded extensions for various file types
 excluded_extensions = {
