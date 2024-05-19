@@ -1,11 +1,15 @@
-import numpy as np
+#import numpy as np
 from neo4j import GraphDatabase
 from collections import defaultdict
-import plotly.graph_objs as go
+
+from CS401_GithubAnalyzer.PY.neo_db import NEO
+
+
+#import plotly.graph_objs as go
 
 
 
-from PY.neo_db import NEO
+#from PY.neo_db import NEO
 
 
 class App:

@@ -4,11 +4,15 @@ import os
 from typing import Dict
 
 import pandas as pd
-from PY.data import get_files_from_json, \
-    get_developers_from_json, read_from_json, get_all_files, \
-    calculate_file_change_coverage, calculate_file_change_coverage_ratio, get_first_last_commit_dates
+#from ..PY.data import get_files_from_json, \
+#get_developers_from_json, read_from_json, get_all_files, \
+#calculate_file_change_coverage, calculate_file_change_coverage_ratio, get_first_last_commit_dates
 from neo4j import GraphDatabase
 
+from CS401_GithubAnalyzer.PY.data import read_from_json, \
+    get_developers_from_json, read_from_json, get_all_files, \
+    calculate_file_change_coverage, calculate_file_change_coverage_ratio, get_first_last_commit_dates, \
+    get_files_from_json
 
 commit_data = read_from_json('commit_data.json')
 first_date, last_date = get_first_last_commit_dates(commit_data)
@@ -54,7 +58,7 @@ class NEO:
         session = data_base_connection.session()
         delete_all_command = "MATCH (n) DETACH DELETE n"
         session.run(delete_all_command)
-        print("neo")
+        print("neo giriş")
         # Create Developer Nodes' Cypher code and connect with Neo4j
         developers = get_developers_from_json()
         developer_id = [i for i in range(1, len(developers) + 1)]

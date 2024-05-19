@@ -5,9 +5,9 @@ import time
 
 import numpy as np
 from flask import Flask, request, jsonify
-from PY.data import dump_json_file, extract_commit_data
+#from PY.data import dump_json_file, extract_commit_data
 from flask_cors import CORS
-import plotly.graph_objs as go
+from CS401_GithubAnalyzer.PY.data import extract_commit_data, dump_json_file
 
 
 # Define excluded extensions for various file types
@@ -19,6 +19,7 @@ excluded_extensions = {
 app = Flask(__name__)
 CORS(app)  # Enable CORS support for all resources
 
+print("ui ya girildi")
 @app.route('/submit-github-link', methods=['POST'])
 def submit_github_link():
     try:

@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 
-from PY.analyzes.graph_algorithms import GraphAlgorithms, developers  # Replace with your graph module or class
+from ..analyzes.graph_algorithms import GraphAlgorithms, developers  # Replace with your graph module or class
 
 graph = GraphAlgorithms()
 
