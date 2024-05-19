@@ -7,8 +7,6 @@ import numpy as np
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-from data import extract_commit_data, dump_json_file
-
 print("test")
 
 # Define excluded extensions for various file types
@@ -21,6 +19,9 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS support for all resources
 
 print("ui ya girildi")
+
+from data import extract_commit_data, dump_json_file
+
 @app.route('/submit-github-link', methods=['POST'])
 def submit_github_link():
     try:
@@ -354,4 +355,4 @@ def get_balanced():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5001)
+    app.run(debug=True, host='0.0.0.0', port=5001)
