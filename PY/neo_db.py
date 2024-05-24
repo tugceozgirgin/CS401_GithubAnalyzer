@@ -9,8 +9,7 @@ import pandas as pd
 #calculate_file_change_coverage, calculate_file_change_coverage_ratio, get_first_last_commit_dates
 from neo4j import GraphDatabase
 
-from CS401_GithubAnalyzer.PY.data import read_from_json, \
-    get_developers_from_json, read_from_json, get_all_files, \
+from data import get_developers_from_json, read_from_json, get_all_files, \
     calculate_file_change_coverage, calculate_file_change_coverage_ratio, get_first_last_commit_dates, \
     get_files_from_json
 

@@ -1,20 +1,19 @@
 #import numpy as np
+import numpy as np
+import pandas as pd
 from neo4j import GraphDatabase
 from collections import defaultdict
+from neo_db import NEO
 
-from CS401_GithubAnalyzer.PY.neo_db import NEO
-
-
-#import plotly.graph_objs as go
-
-
-
-#from PY.neo_db import NEO
 
 
 class App:
+
     neo_instance = NEO()
     neo_instance.run()
+
+
+    print("değişiklik var")
 
 
     def __init__(self):
@@ -329,4 +328,47 @@ class App:
                 lines_modified_per_developer[developer_id] += total_lines_modified
 
         return dict(lines_modified_per_developer)
+
+    def plot_files_modified_boxplot(self):
+        files_modified_per_developer = self.list_files_modified_per_developer()
+        data = {'Developer': [], 'Modified Files': []}
+
+        for (commit_hash, developer_id), modified_files_count in files_modified_per_developer.items():
+            data['Developer'].append(developer_id)
+            data['Modified Files'].append(modified_files_count)
+
+        df_files_modified = pd.DataFrame(data)
+
+        mean = df_files_modified['Modified Files'].mean()
+        std_dev = df_files_modified['Modified Files'].std()
+        cutoff = 3 * std_dev
+
+        df_filtered = df_files_modified[np.abs(df_files_modified['Modified Files'] - mean) < cutoff]
+
+        return df_filtered
+
+    def plot_lines_modified_boxplot(self):
+        # Call the method to get lines modified per commit
+        lines_modified_per_commit = self.list_lines_modified_per_commit()
+
+        # Organize data into a DataFrame
+        data = {
+            'Developer': [],
+            'Lines Modified': []
+        }
+
+        for (commit_hash, developer_id), lines_modified in lines_modified_per_commit.items():
+            data['Developer'].append(developer_id)
+            data['Lines Modified'].append(lines_modified)
+
+        df = pd.DataFrame(data)
+
+        mean = df['Lines Modified'].mean()
+        std_dev = df['Lines Modified'].std()
+        cutoff = 3 * std_dev
+
+        df_filtered = df[np.abs(df['Lines Modified'] - mean) < cutoff]
+        return df_filtered
+
+
 

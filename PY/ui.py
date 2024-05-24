@@ -3,11 +3,16 @@ import json
 import os
 import time
 
+import pandas as pd
+from neo4j import GraphDatabase
+from collections import defaultdict
+
 import numpy as np
 from flask import Flask, request, jsonify
+from data import dump_json_file, extract_commit_data
 from flask_cors import CORS
 
-print("test")
+
 
 # Define excluded extensions for various file types
 excluded_extensions = {
@@ -18,9 +23,14 @@ excluded_extensions = {
 app = Flask(__name__)
 CORS(app)  # Enable CORS support for all resources
 
-print("ui ya girildi")
-
-from data import extract_commit_data, dump_json_file
+def remove_old_file():
+    output_file_path = 'commit_data.json'
+    try:
+        if os.path.exists(output_file_path):
+            os.remove(output_file_path)
+            print("Existing 'commit_data.json' has been deleted.")
+    except Exception as e:
+        print(f"Failed to delete 'commit_data.json': {e}")
 
 @app.route('/submit-github-link', methods=['POST'])
 def submit_github_link():
@@ -39,6 +49,11 @@ def submit_github_link():
         commit_data = extract_commit_data(github_link, dt1, dt2)
         output_file_path = 'commit_data.json'
         dump_json_file(output_file_path, commit_data)
+
+        # Initialize or refresh the Neo4j database with new data
+        from app import NEO
+        neo_instance = NEO()  # Assuming NEO handles database initialization
+        neo_instance.run()  # This should clear the old data and insert new data
 
 
         # Return success response
@@ -353,6 +368,50 @@ def get_balanced():
     except Exception as e:
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
+@app.route('/get-box-plot-1-data', methods=['GET'])
+def get_box_plot_1_data():
+    try:
+        from app import App
+        app_instance = App()
+        df_filtered = app_instance.plot_files_modified_boxplot()
+
+        # Group by Developer and collect all Modified Files counts into lists
+        result = df_filtered.groupby('Developer')['Modified Files'].apply(list).reset_index()
+        result.columns = ['Developer', 'ModifiedFiles']
+
+        # Convert DataFrame to dictionary format expected by React
+        chart_data = {
+            'labels': result['Developer'].tolist(),
+            'datapoints': result['ModifiedFiles'].tolist()
+        }
+        print(" Data fetch: ", chart_data)
+        return jsonify(chart_data), 200
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+@app.route('/get-box-plot-2-data', methods=['GET'])
+def get_box_plot_2_data():
+    try:
+        from app import App
+        app_instance = App()
+        df_filtered = app_instance.plot_lines_modified_boxplot()
+
+        # Group by Developer and collect all Modified Files counts into lists
+        result = df_filtered.groupby('Developer')['Lines Modified'].apply(list).reset_index()
+        result.columns = ['Developer', 'Lines Modified']
+
+        # Convert DataFrame to dictionary format expected by React
+        chart_data = {
+            'labels': result['Developer'].tolist(),
+            'datapoints': result['Lines Modified'].tolist()
+        }
+        print(" Data fetch: ", chart_data)
+        return jsonify(chart_data), 200
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
 
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    remove_old_file()
+    app.run(host='0.0.0.0', debug=True, port=5001)  # Bind to all interfaces
