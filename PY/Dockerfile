@@ -18,7 +18,8 @@ COPY requirements /app/requirements.txt
 RUN pip install -r /app/requirements
 
 # Copy the rest of the application
-COPY CS401_GithubAnalyzer /app/CS401_GithubAnalyzer
+COPY . .
+#CS401_GithubAnalyzer /app/CS401_GithubAnalyzer
 
 WORKDIR /app/CS401_GithubAnalyzer/PY
 

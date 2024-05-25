@@ -18,7 +18,7 @@ first_date, last_date = get_first_last_commit_dates(commit_data)
 
 
 def execute_nodes(commands):
-    data_base_connection = GraphDatabase.driver(uri="bolt://localhost:7687", auth=("neo4j", "password"))
+    data_base_connection = GraphDatabase.driver(uri="bolt://neo4j:7687", auth=("neo4j", "password"))
     session = data_base_connection.session()
     for i in commands:
         session.run(i)

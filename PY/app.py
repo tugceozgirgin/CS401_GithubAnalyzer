@@ -8,25 +8,24 @@ from neo_db import NEO
 
 
 class App:
-
     neo_instance = NEO()
     neo_instance.run()
 
-
     print("değişiklik var")
 
-
     def __init__(self):
-        self._uri = "bolt://localhost:7687"
+        self._uri = "bolt://neo4j:7687"  # Use the Docker service name and bolt protocol
         self._user = "neo4j"
-        self._password = "password"
+        self._password = "password"  # Ensure this matches the NEO4J_AUTH in your docker-compose.yml
         self._driver = GraphDatabase.driver(self._uri, auth=(self._user, self._password))
 
     def run(self):
-        data_base_connection = GraphDatabase.driver(uri="bolt://localhost:7687", auth=("neo4j", "password"))
+        print("app.py ye girildi")
+        data_base_connection = GraphDatabase.driver(uri=self._uri, auth=(self._user, self._password))
         session = data_base_connection.session()
         delete_all_command = "MATCH (n) DETACH DELETE n"
         session.run(delete_all_command)
+
 
     def close(self):
         self._driver.close()

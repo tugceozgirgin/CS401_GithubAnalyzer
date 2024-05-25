@@ -23,6 +23,7 @@ excluded_extensions = {
 app = Flask(__name__)
 CORS(app)  # Enable CORS support for all resources
 
+print("ui.py girildi")
 def remove_old_file():
     output_file_path = 'commit_data.json'
     try:
