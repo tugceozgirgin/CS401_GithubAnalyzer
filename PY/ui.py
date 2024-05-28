@@ -355,6 +355,25 @@ def get_balanced():
     except Exception as e:
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
+@app.route('/get-developer-commit-details', methods=['GET'])
+def get_developer_commit_details():
+    try:
+        from app import App
+        app_instance = App()
+
+        commit_times = app_instance.get_commit_times()
+        commit_frequency = app_instance.get_commit_frequency(commit_times)
+
+        developer_commit_details = {
+            'commit_times': commit_times,
+            'commit_frequency': commit_frequency
+        }
+
+        return jsonify(developer_commit_details), 200
+
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
 @app.route('/get-solvers', methods=['GET'])
 def get_solvers():
     try:
@@ -367,7 +386,6 @@ def get_solvers():
         return jsonify(solvers), 200
     except Exception as e:
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
-
 
 @app.route('/get-monthly-inserted-lines', methods=['GET'])
 def get_monthly_inserted_lines():

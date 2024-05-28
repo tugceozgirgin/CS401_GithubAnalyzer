@@ -352,7 +352,7 @@ class App:
 
         return dict(dev_to_closed_issues)
 
-    def find_solvers(self, threshold=10):
+    def find_solvers(self, threshold=0):
         dev_to_closed_issues = self.dev_to_closed_issues()
 
         solvers = {dev: num_closed_issues for dev, num_closed_issues in dev_to_closed_issues.items() if
@@ -422,7 +422,8 @@ class App:
     def get_commit_times(self):
         commit_times = defaultdict(lambda: {'first_commit': None, 'last_commit': None, 'commits': []})
 
-        all_commits = self.read_commit_data()  # Retrieve all commits with their timestamps
+        # Assuming you have a method to get all commits with their timestamps and authors
+        all_commits = self.get_all_commits()  # Replace this with your actual method
 
         for commit in all_commits:
             author = commit['author']
@@ -449,3 +450,17 @@ class App:
                     commit_frequency[author] = f"{num_commits} commits on the same day"
 
         return commit_frequency
+
+    def get_all_commits(self):
+        with self._driver.session() as session:
+            result = session.run(
+                "MATCH (d:Developer)-[:DEVELOPED]->(c:Commit) "
+                "RETURN d.developer_name AS author, c.commit_date AS timestamp"
+            )
+            all_commits = []
+            for record in result:
+                all_commits.append({
+                    'author': record['author'],
+                    'timestamp': record['timestamp']
+                })
+            return all_commits
