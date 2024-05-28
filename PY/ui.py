@@ -38,7 +38,7 @@ def submit_github_link():
         dump_json_file(output_file_path, commit_data)
 
         issues_data = extract_issues(github_link,
-                                     "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")
+                                     "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")
         output_file_path_issues = 'issue_data.json'
         dump_json_file('issue_data.json', issues_data)
 
@@ -411,6 +411,27 @@ def get_monthly_inserted_lines():
     except Exception as e:
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
+@app.route('/get-stacked-plot-data', methods=['GET'])
+def get_stacked_plot_data():
+    try:
+        from app import App
+        app_instance = App()
+        commit_data = app_instance.read_commit_data()
+        monthly_data = app_instance.process_monthly_commit_data(commit_data)
+
+        data = {
+            'series': [
+                {
+                    'name': str(year),
+                    'data': monthly_data[year]
+                }
+                for year in sorted(monthly_data.keys())
+            ]
+        }
+        print("Data ", data)
+        return jsonify(data), 200
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)

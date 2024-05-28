@@ -315,6 +315,7 @@ class App:
     def get_closed_issues_data(self):
         closed_issues_data = []
 
+        # Replace this with your actual query to retrieve closed issues data
         query = (
             "MATCH (i:Issue)-[:CLOSED_BY]->(d:Developer) "
             "RETURN i.issue_id AS issue_id, i.state AS state, "
@@ -340,6 +341,13 @@ class App:
 
         return closed_issues_data
 
+    def find_solvers(self, threshold=10):
+        dev_to_closed_issues = self.dev_to_closed_issues()
+
+        solvers = {dev: num_closed_issues for dev, num_closed_issues in dev_to_closed_issues.items() if
+                   num_closed_issues >= threshold}
+        return solvers
+
     def dev_to_closed_issues(self):
         dev_to_closed_issues = defaultdict(int)
 
@@ -352,14 +360,6 @@ class App:
 
         return dict(dev_to_closed_issues)
 
-    def find_solvers(self, threshold=0):
-        dev_to_closed_issues = self.dev_to_closed_issues()
-
-        solvers = {dev: num_closed_issues for dev, num_closed_issues in dev_to_closed_issues.items() if
-                   num_closed_issues >= threshold}
-        return solvers
-
-
     def get_issue_counts(self):
         with self._driver.session() as session:
             result = session.run(
@@ -368,10 +368,12 @@ class App:
                 "COUNT(CASE WHEN i.state = 'closed' THEN 1 END) AS closed_issues"
             )
             record = result.single()
+
             return {
                 'total_issues': record['total_issues'],
                 'closed_issues': record['closed_issues']
             }
+
 
     def read_commit_data(self):
         commit_data = []

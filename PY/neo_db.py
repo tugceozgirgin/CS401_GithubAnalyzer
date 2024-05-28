@@ -169,6 +169,57 @@ class NEO:
         # Execute both types of relationship commands
         execute_nodes(commit_file_relation_commands)
         execute_nodes(file_commit_relation_commands)
+        # Create Issue Nodes
+        issues_data = read_from_json("issue_data.json")
+        issue_execution_commands = []
+        for issue in issues_data:
+            neo4j_create_statement = (
+                    "CREATE (i:Issue {"
+                    "issue_id: " + str(issue['id']) + ", "
+                                                      "title: '" + issue['title'].replace("'", "\\'") + "', "
+                                                                                                        "description: '" + (
+                        issue['description'].replace("'", "\\'") if issue['description'] is not None else "") + "', "
+                                                                                                                "state: '" +
+                    issue['state'] + "', "
+                                     "created_at: '" + issue['created_at'] + "', "
+                                                                             "closed_at: " + (
+                        f"'{issue['closed_at']}'" if issue['closed_at'] is not None else "null") + ", "
+                                                                                                   "closed_by: " + (
+                        f"'{issue['closed_by']}'" if issue['closed_by'] is not None else "null") + ", "
+                    # "opened_by: " + (f"'{issue['opened_by']}'" if issue['opened_by'] is not None else "null") + "'})"
+                                                                                                   "opened_by: '" +
+                    issue['opened_by'] + "'})"
+            )
+
+            issue_execution_commands.append(neo4j_create_statement)
+        execute_nodes(issue_execution_commands)
+
+        # Create relationships between Developer and Issue nodes based on opened_by and closed_by fields
+        developer_issue_relation_commands = []
+
+        for issue in issues_data:
+            opened_by = issue['opened_by']
+            closed_by = issue['closed_by']
+
+            if opened_by:
+                opened_by_standardized = standardize_name(opened_by)
+                neo4j_create_relation_dev_issue_statement = (
+                    f"MATCH (d1:Developer {{developer_name: '{opened_by_standardized}'}}), "
+                    f"(i:Issue {{issue_id: {issue['id']}}}) "
+                    f"CREATE (d1)-[:OPENED]->(i)"
+                )
+                developer_issue_relation_commands.append(neo4j_create_relation_dev_issue_statement)
+
+            if closed_by:
+                closed_by_standardized = standardize_name(closed_by)
+                neo4j_create_relation_dev_issue_statement = (
+                    f"MATCH (d2:Developer {{developer_name: '{closed_by_standardized}'}}), "
+                    f"(i:Issue {{issue_id: {issue['id']}}}) "
+                    f"CREATE (i)-[:CLOSED_BY]->(d2)"
+                )
+                developer_issue_relation_commands.append(neo4j_create_relation_dev_issue_statement)
+
+        execute_nodes(developer_issue_relation_commands)
 
     def analyze_developers1(self):
         all_files = get_all_files(commit_data)
