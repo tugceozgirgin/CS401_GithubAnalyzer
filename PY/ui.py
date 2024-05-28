@@ -7,8 +7,7 @@ import numpy as np
 from flask import Flask, request, jsonify
 #from PY.data import dump_json_file, extract_commit_data
 from flask_cors import CORS
-from CS401_GithubAnalyzer.PY.data import extract_commit_data, dump_json_file
-
+from CS401_GithubAnalyzer.PY.data import extract_commit_data, dump_json_file, extract_issues
 
 # Define excluded extensions for various file types
 excluded_extensions = {
@@ -37,6 +36,11 @@ def submit_github_link():
         commit_data = extract_commit_data(github_link, dt1, dt2)
         output_file_path = 'commit_data.json'
         dump_json_file(output_file_path, commit_data)
+
+        issues_data = extract_issues(github_link,
+                                     "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")
+        output_file_path_issues = 'issue_data.json'
+        dump_json_file('issue_data.json', issues_data)
 
 
         # Return success response
@@ -151,20 +155,20 @@ def get_developer_info4():
         total_file_count = app_instance.get_num_files()
         total_developer_count = len(app_instance.get_developers())
         developer_names = app_instance.get_developer_names()
+        issue_counts = app_instance.get_issue_counts()
 
         developer_info = {
-                'total_commit_count': total_commit_count,
-                'total_file_count': total_file_count,
-                'total_developer_count': total_developer_count,
-                'developer_names': developer_names
+            'total_commit_count': total_commit_count,
+            'total_file_count': total_file_count,
+            'total_developer_count': total_developer_count,
+            'developer_names': developer_names,
+            'total_issues': issue_counts['total_issues'],
+            'closed_issues': issue_counts['closed_issues']
         }
-        #print(total_commit_count)
-
         return jsonify(developer_info), 200
 
     except Exception as e:
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
-
 
 @app.route('/get-similarity', methods=['GET'])
 def get_similarity():
@@ -348,6 +352,43 @@ def get_balanced():
 
         return jsonify(chart_data), 200
 
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+@app.route('/get-solvers', methods=['GET'])
+def get_solvers():
+    try:
+        from app import App
+        app_instance = App()
+
+        threshold = request.args.get('threshold', default=0, type=int)
+        solvers = app_instance.find_solvers(threshold)
+
+        return jsonify(solvers), 200
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
+@app.route('/get-monthly-inserted-lines', methods=['GET'])
+def get_monthly_inserted_lines():
+    try:
+        from app import App
+        app_instance = App()
+
+        commit_data = app_instance.read_commit_data()
+        monthly_data = app_instance.process_monthly_commit_data(commit_data)
+
+        data = {
+            'series': [
+                {
+                    'name': str(year),
+                    'data': monthly_data[year]
+                }
+                for year in sorted(monthly_data.keys())
+            ]
+        }
+
+        return jsonify(data), 200
     except Exception as e:
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 

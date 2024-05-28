@@ -1,21 +1,11 @@
-#import numpy as np
+from datetime import datetime
 from neo4j import GraphDatabase
 from collections import defaultdict
-
 from CS401_GithubAnalyzer.PY.neo_db import NEO
-
-
-#import plotly.graph_objs as go
-
-
-
-#from PY.neo_db import NEO
-
 
 class App:
     neo_instance = NEO()
     neo_instance.run()
-
 
     def __init__(self):
         self._uri = "bolt://localhost:7687"
@@ -47,7 +37,6 @@ class App:
             result = session.run("MATCH (d:Developer) RETURN d.developer_id AS developer_id")
             developers = [record["developer_id"] for record in result]
             return developers
-
 
     def get_files_for_developer(self, developer_id):
         with self._driver.session() as session:
@@ -105,8 +94,8 @@ class App:
     def get_num_files(self):
         all_files = set()
         with self._driver.session() as session:
-                result = session.run("MATCH (f:Files) RETURN f.file_name")
-                all_files.update(record["f.file_name"] for record in result)
+            result = session.run("MATCH (f:Files) RETURN f.file_name")
+            all_files.update(record["f.file_name"] for record in result)
 
         return len(all_files)
 
@@ -131,7 +120,6 @@ class App:
     def is_jack(self, dev_to_file_coverage, developer):
         treshold = 0.19
         return dev_to_file_coverage.get(developer, 0) > treshold
-
 
     def dev_to_rare_files(self):
         dev_to_files = self.dev_to_files()
@@ -166,7 +154,6 @@ class App:
         sorted_dev_to_mavenness = self.sort_by_value(dev_to_mavenness)
         return sorted_dev_to_mavenness
 
-
     def find_replacements_for_all(self):
         dev_to_files = self.dev_to_files()
         all_devs = set(dev_to_files.keys())
@@ -181,11 +168,11 @@ class App:
 
             for dev in other_devs:
                 dev_files = dev_to_files.get(dev, set())
-                common_elements=0
+                common_elements = 0
                 for file in leaving_dev_files:
                     for file2 in dev_files:
-                        if(file['file_id']==file2['file_id']):
-                            common_elements= common_elements+1
+                        if file['file_id'] == file2['file_id']:
+                            common_elements += 1
                 overlapping_knowledge = common_elements / len(leaving_dev_files) if len(leaving_dev_files) > 0 else 0
                 dev_to_overlapping_knowledge[dev] = overlapping_knowledge
 
@@ -201,10 +188,6 @@ class App:
             top_n_replacements_result[leaving_dev] = {k: v for k, v in sorted(replacements.items(), key=lambda item: item[1], reverse=True)[:top_n]}
 
         return top_n_replacements_result
-
-
-
-
 
     def get_developer_lines_modified(self):
         developer_lines_modified = defaultdict(int)
@@ -274,7 +257,6 @@ class App:
 
         return total_lines_modified
 
-
     def list_files_modified_per_developer(self):
         files_modified_per_developer = defaultdict(int)
 
@@ -330,3 +312,140 @@ class App:
 
         return dict(lines_modified_per_developer)
 
+    def get_closed_issues_data(self):
+        closed_issues_data = []
+
+        query = (
+            "MATCH (i:Issue)-[:CLOSED_BY]->(d:Developer) "
+            "RETURN i.issue_id AS issue_id, i.state AS state, "
+            "i.created_at AS created_at, i.closed_at AS closed_at, "
+            "d.developer_id AS closed_by_id, d.developer_name AS closed_by_name"
+        )
+
+        with self._driver.session() as session:
+            result = session.run(query)
+
+            for record in result:
+                issue_data = {
+                    'id': record['issue_id'],
+                    'state': record['state'],
+                    'created_at': record['created_at'],
+                    'closed_at': record['closed_at'],
+                    'closed_by': {
+                        'developer_id': record['closed_by_id'],
+                        'developer_name': record['closed_by_name']
+                    }
+                }
+                closed_issues_data.append(issue_data)
+
+        return closed_issues_data
+
+    def dev_to_closed_issues(self):
+        dev_to_closed_issues = defaultdict(int)
+
+        closed_issues_data = self.get_closed_issues_data()
+
+        for issue in closed_issues_data:
+            closed_by = issue.get('closed_by', {}).get('developer_name', '')
+            if closed_by:
+                dev_to_closed_issues[closed_by] += 1
+
+        return dict(dev_to_closed_issues)
+
+    def find_solvers(self, threshold=10):
+        dev_to_closed_issues = self.dev_to_closed_issues()
+
+        solvers = {dev: num_closed_issues for dev, num_closed_issues in dev_to_closed_issues.items() if
+                   num_closed_issues >= threshold}
+        return solvers
+
+    def get_issue_counts(self):
+        with self._driver.session() as session:
+            result = session.run(
+                "MATCH (i:Issue) "
+                "RETURN COUNT(i) AS total_issues, "
+                "COUNT(CASE WHEN i.state = 'closed' THEN 1 END) AS closed_issues"
+            )
+            record = result.single()
+            return {
+                'total_issues': record['total_issues'],
+                'closed_issues': record['closed_issues']
+            }
+
+    def read_commit_data(self):
+        commit_data = []
+
+        with self._driver.session() as session:
+            result = session.run(
+                "MATCH (c:Commit) "
+                "RETURN c.commit_date AS commit_date, "
+                "REDUCE(s = 0, n IN c.lines_inserted | s + n) AS total_lines_inserted, "
+                "REDUCE(s = 0, n IN c.lines_deleted | s + n) AS total_lines_deleted"
+            )
+
+            for record in result:
+                commit_data.append({
+                    'commit_date': record['commit_date'],
+                    'lines_inserted': record['total_lines_inserted'],
+                    'lines_deleted': record['total_lines_deleted']
+                })
+
+        return commit_data
+
+    def process_monthly_commit_data(self, commit_data):
+        # Convert commit_date to datetime and extract year and month
+        for commit in commit_data:
+            commit['commit_date'] = datetime.strptime(commit['commit_date'], '%Y-%m-%d %H:%M:%S')
+            commit['year'] = commit['commit_date'].year
+            commit['month'] = commit['commit_date'].month
+
+        # Create a dictionary to hold the monthly inserted lines data
+        monthly_data = {}
+
+        for commit in commit_data:
+            year = commit['year']
+            month = commit['month']
+            lines_inserted = commit['lines_inserted']
+
+            if year not in monthly_data:
+                monthly_data[year] = [0] * 12
+
+            monthly_data[year][month - 1] += lines_inserted  # month - 1 to use 0-indexed month
+
+        return monthly_data
+
+    def get_lines_of_code_data(self):
+        commit_data = self.read_commit_data()
+        monthly_lines_of_code = self.process_monthly_commit_data(commit_data)
+        return monthly_lines_of_code
+
+    def get_commit_times(self):
+        commit_times = defaultdict(lambda: {'first_commit': None, 'last_commit': None, 'commits': []})
+
+        all_commits = self.read_commit_data()  # Retrieve all commits with their timestamps
+
+        for commit in all_commits:
+            author = commit['author']
+            timestamp = datetime.strptime(commit['timestamp'], '%Y-%m-%d %H:%M:%S')
+            if not commit_times[author]['first_commit'] or timestamp < commit_times[author]['first_commit']:
+                commit_times[author]['first_commit'] = timestamp
+            if not commit_times[author]['last_commit'] or timestamp > commit_times[author]['last_commit']:
+                commit_times[author]['last_commit'] = timestamp
+            commit_times[author]['commits'].append(timestamp)
+
+        return commit_times
+
+    def get_commit_frequency(self, commit_times):
+        commit_frequency = {}
+
+        for author, times in commit_times.items():
+            if times['first_commit'] and times['last_commit']:
+                days_active = (times['last_commit'] - times['first_commit']).days
+                num_commits = len(times['commits'])
+                if days_active > 0:
+                    frequency = num_commits / days_active
+                    commit_frequency[author] = f"{round(frequency, 2)} commits per day"
+                else:
+                    commit_frequency[author] = f"{num_commits} commits on the same day"
+
+        return commit_frequency
