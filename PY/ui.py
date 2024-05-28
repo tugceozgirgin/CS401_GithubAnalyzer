@@ -170,6 +170,7 @@ def get_developer_info4():
     except Exception as e:
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
+
 @app.route('/get-similarity', methods=['GET'])
 def get_similarity():
     try:

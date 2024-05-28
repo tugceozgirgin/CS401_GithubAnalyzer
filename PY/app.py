@@ -359,6 +359,7 @@ class App:
                    num_closed_issues >= threshold}
         return solvers
 
+
     def get_issue_counts(self):
         with self._driver.session() as session:
             result = session.run(

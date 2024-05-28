@@ -52,6 +52,7 @@ class NEO:
     def __init__(self):
         pass
 
+
     def run(self):
         # Add this section to delete all existing nodes
         data_base_connection = GraphDatabase.driver(uri="bolt://localhost:7687", auth=("neo4j", "password"))
