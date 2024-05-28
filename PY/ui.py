@@ -38,7 +38,7 @@ def submit_github_link():
         dump_json_file(output_file_path, commit_data)
 
         issues_data = extract_issues(github_link,
-                                     "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")
+                                     "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")
         output_file_path_issues = 'issue_data.json'
         dump_json_file('issue_data.json', issues_data)
 
@@ -157,6 +157,10 @@ def get_developer_info4():
         developer_names = app_instance.get_developer_names()
         issue_counts = app_instance.get_issue_counts()
 
+        #print("ISSUE: ", issue_counts['total_issues'])
+        #print("CLOSED ISSUE: ", issue_counts['closed_issues'])
+
+
         developer_info = {
             'total_commit_count': total_commit_count,
             'total_file_count': total_file_count,
@@ -165,11 +169,13 @@ def get_developer_info4():
             'total_issues': issue_counts['total_issues'],
             'closed_issues': issue_counts['closed_issues']
         }
+
+
         return jsonify(developer_info), 200
 
     except Exception as e:
+        print(f"An error occurred: {str(e)}")  # Log the error
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
-
 
 @app.route('/get-similarity', methods=['GET'])
 def get_similarity():

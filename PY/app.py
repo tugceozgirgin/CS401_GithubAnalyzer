@@ -368,12 +368,10 @@ class App:
                 "COUNT(CASE WHEN i.state = 'closed' THEN 1 END) AS closed_issues"
             )
             record = result.single()
-
             return {
                 'total_issues': record['total_issues'],
                 'closed_issues': record['closed_issues']
             }
-
 
     def read_commit_data(self):
         commit_data = []
