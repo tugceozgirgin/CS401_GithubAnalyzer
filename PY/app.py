@@ -1,4 +1,7 @@
 from datetime import datetime
+
+import numpy as np
+import pandas as pd
 from neo4j import GraphDatabase
 from collections import defaultdict
 from CS401_GithubAnalyzer.PY.neo_db import NEO
@@ -447,8 +450,7 @@ class App:
                 if days_active > 0:
                     frequency = num_commits / days_active
                     commit_frequency[author] = f"{round(frequency, 2)} commits per day"
-                else:
-                    commit_frequency[author] = f"{num_commits} commits on the same day"
+
 
         return commit_frequency
 
@@ -465,3 +467,81 @@ class App:
                     'timestamp': record['timestamp']
                 })
             return all_commits
+
+    def plot_files_modified_boxplot(self):
+        files_modified_per_developer = self.list_files_modified_per_developer()
+        data = {'Developer': [], 'Modified Files': []}
+
+        for (commit_hash, developer_id), modified_files_count in files_modified_per_developer.items():
+            data['Developer'].append(developer_id)
+            data['Modified Files'].append(modified_files_count)
+
+        df_files_modified = pd.DataFrame(data)
+
+        mean = df_files_modified['Modified Files'].mean()
+        std_dev = df_files_modified['Modified Files'].std()
+        cutoff = 3 * std_dev
+
+        df_filtered = df_files_modified[np.abs(df_files_modified['Modified Files'] - mean) < cutoff]
+
+        return df_filtered
+
+    def plot_lines_modified_boxplot(self):
+        # Call the method to get lines modified per commit
+        lines_modified_per_commit = self.list_lines_modified_per_commit()
+
+        # Organize data into a DataFrame
+        data = {
+            'Developer': [],
+            'Lines Modified': []
+        }
+
+        for (commit_hash, developer_id), lines_modified in lines_modified_per_commit.items():
+            data['Developer'].append(developer_id)
+            data['Lines Modified'].append(lines_modified)
+
+        df = pd.DataFrame(data)
+
+        mean = df['Lines Modified'].mean()
+        std_dev = df['Lines Modified'].std()
+        cutoff = 3 * std_dev
+
+        df_filtered = df[np.abs(df['Lines Modified'] - mean) < cutoff]
+        return df_filtered
+
+    def get_top_files(self):
+        with self._driver.session() as session:
+            # Query to get each file and count the commits related to it, aggregating counts properly
+            result = session.run(
+                """
+                MATCH (f:Files)<-[:MODIFIED]-(c:Commit)
+                RETURN f.file_name AS file_name, COUNT(c) AS commit_count
+                UNION ALL
+                MATCH (f:Files)-[:MODIFIED_BY]->(c:Commit)
+                RETURN f.file_name AS file_name, COUNT(c) AS commit_count
+                """
+            )
+
+            # Create a dictionary to store the aggregated commit counts
+            file_commit_counts = {}
+
+            for record in result:
+                file_name = record['file_name']
+                commit_count = record['commit_count']
+                if file_name in file_commit_counts:
+                    file_commit_counts[file_name] += commit_count
+                else:
+                    file_commit_counts[file_name] = commit_count
+
+            # Convert the dictionary to a DataFrame
+            data = {
+                'File Name': list(file_commit_counts.keys()),
+                'Commit Count': list(file_commit_counts.values())
+            }
+            df = pd.DataFrame(data)
+
+            # Sort the DataFrame by commit count in descending order
+            df_sorted = df.sort_values(by='Commit Count', ascending=False)
+
+            # Return the top 10 files
+            return df_sorted.head(10)

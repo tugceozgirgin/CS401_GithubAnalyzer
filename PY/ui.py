@@ -7,6 +7,8 @@ import numpy as np
 from flask import Flask, request, jsonify
 #from PY.data import dump_json_file, extract_commit_data
 from flask_cors import CORS
+
+from CS401_GithubAnalyzer.PY.app import App
 from CS401_GithubAnalyzer.PY.data import extract_commit_data, dump_json_file, extract_issues
 
 # Define excluded extensions for various file types
@@ -19,6 +21,17 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS support for all resources
 
 print("ui ya girildi")
+
+def remove_old_file():
+    output_file_path = 'commit_data.json'
+    try:
+        if os.path.exists(output_file_path):
+            os.remove(output_file_path)
+            print("Existing 'commit_data.json' has been deleted.")
+    except Exception as e:
+        print(f"Failed to delete 'commit_data.json': {e}")
+
+
 @app.route('/submit-github-link', methods=['POST'])
 def submit_github_link():
     try:
@@ -38,9 +51,13 @@ def submit_github_link():
         dump_json_file(output_file_path, commit_data)
 
         issues_data = extract_issues(github_link,
-                                     "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")
+                                     "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")
         output_file_path_issues = 'issue_data.json'
         dump_json_file('issue_data.json', issues_data)
+
+        from app import NEO
+        neo_instance = NEO()  # Assuming NEO handles database initialization
+        neo_instance.run()
 
 
         # Return success response
@@ -434,10 +451,82 @@ def get_stacked_plot_data():
                 for year in sorted(monthly_data.keys())
             ]
         }
-        print("Data ", data)
         return jsonify(data), 200
     except Exception as e:
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
+@app.route('/get-box-plot-1-data', methods=['GET'])
+def get_box_plot_1_data():
+    try:
+        from app import App
+        app_instance = App()
+        df_filtered = app_instance.plot_files_modified_boxplot()
+
+        # Group by Developer and collect all Modified Files counts into lists
+        result = df_filtered.groupby('Developer')['Modified Files'].apply(list).reset_index()
+        result.columns = ['Developer', 'ModifiedFiles']
+
+        # Convert DataFrame to dictionary format expected by React
+        chart_data = {
+            'labels': result['Developer'].tolist(),
+            'datapoints': result['ModifiedFiles'].tolist()
+        }
+        return jsonify(chart_data), 200
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+@app.route('/get-box-plot-2-data', methods=['GET'])
+def get_box_plot_2_data():
+    try:
+        from app import App
+        app_instance = App()
+        df_filtered = app_instance.plot_lines_modified_boxplot()
+
+        # Group by Developer and collect all Modified Files counts into lists
+        result = df_filtered.groupby('Developer')['Lines Modified'].apply(list).reset_index()
+        result.columns = ['Developer', 'Lines Modified']
+
+        # Convert DataFrame to dictionary format expected by React
+        chart_data = {
+            'labels': result['Developer'].tolist(),
+            'datapoints': result['Lines Modified'].tolist()
+        }
+        return jsonify(chart_data), 200
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+def get_box_plot_2_data():
+    try:
+        from app import App
+        app_instance = App()
+        df_filtered = app_instance.plot_lines_modified_boxplot()
+
+        # Group by Developer and collect all Modified Files counts into lists
+        result = df_filtered.groupby('Developer')['Lines Modified'].apply(list).reset_index()
+        result.columns = ['Developer', 'Lines Modified']
+
+        # Convert DataFrame to dictionary format expected by React
+        chart_data = {
+            'labels': result['Developer'].tolist(),
+            'datapoints': result['Lines Modified'].tolist()
+        }
+        return jsonify(chart_data), 200
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'})
+
+@app.route('/get-top-files', methods=['GET'])
+def get_top_files():
+    try:
+        app_instance = App()
+        top_files = app_instance.get_top_files()
+        chart_data = {
+            'labels': top_files['File Name'].tolist(),
+            'datapoints': top_files['Commit Count'].tolist()
+        }
+        print("Data fetched:", chart_data)
+        return jsonify(chart_data), 200
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
 if __name__ == "__main__":
-    app.run(debug=True, port=5001)
+    #remove_old_file()
+    app.run(host='0.0.0.0', debug=True, port=5001)

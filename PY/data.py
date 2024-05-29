@@ -152,7 +152,7 @@ def extract_commit_data(github_link, dt1, dt2):
 
 def extract_issues(repo_url, access_token):
     try:
-        g = Github("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")
+        g = Github("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")
 
         # Extract username and repository name from the URL
         repo_url_parts = repo_url.strip('/').split('/')
